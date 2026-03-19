@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String   @id @default(uuid()) @db.Uuid
+  email             String   @unique
+  name              String
+  avatarUrl         String?  @map("avatar_url")
+  notificationPrefs Json     @default("{\"inApp\": true, \"email\": true, \"slack\": false}") @map("notification_prefs")
+  slackWebhookUrl   String?  @map("slack_webhook_url")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  createdDocuments    Document[]          @relation("DocumentCreator")
+  lockedDocuments     Document[]          @relation("DocumentLocker")
+  memberships         DocumentMember[]
+  documentSignoffs    DocumentSignoff[]
+  discussions         Discussion[]        @relation("DiscussionCreator")
+  discussionComments  DiscussionComment[]
+  discussionSignoffs  DiscussionSignoff[]
+  resolvedDiscussions Discussion[]        @relation("DiscussionResolver")
+  triggeredCommits    DocumentGitCommit[]
+  notifications       Notification[]
+
+  @@map("users")
+}
+
+model Document {
+  id        String    @id
+  title     String
+  content   Json      @default("{}")
+  status    String    @default("draft")
+  mode      String    @default("doc")
+  gitFile   String    @unique @map("git_file")
+  createdBy String    @map("created_by") @db.Uuid
+  lockedBy  String?   @map("locked_by") @db.Uuid
+  lockedAt  DateTime? @map("locked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  creator       User                @relation("DocumentCreator", fields: [createdBy], references: [id])
+  locker        User?               @relation("DocumentLocker", fields: [lockedBy], references: [id])
+  tags          DocumentTag[]
+  members       DocumentMember[]
+  signoffs      DocumentSignoff[]
+  discussions   Discussion[]
+  gitCommits    DocumentGitCommit[]
+  notifications Notification[]
+
+  @@index([status])
+  @@index([createdBy])
+  @@index([updatedAt(sort: Desc)])
+  @@map("documents")
+}
+
+model DocumentTag {
+  documentId String   @map("document_id")
+  tag        String
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tag])
+  @@index([tag])
+  @@map("document_tags")
+}
+
+model DocumentMember {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id")
+  userId     String   @map("user_id") @db.Uuid
+  role       String
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, userId, role])
+  @@index([userId])
+  @@map("document_members")
+}
+
+model DocumentSignoff {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id")
+  userId     String   @map("user_id") @db.Uuid
+  signedAt   DateTime @default(now()) @map("signed_at")
+  commitSha  String?  @map("commit_sha")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, userId])
+  @@map("document_signoffs")
+}
+
+model Discussion {
+  id         String    @id @default(uuid()) @db.Uuid
+  documentId String    @map("document_id")
+  createdBy  String    @map("created_by") @db.Uuid
+  anchorType String    @map("anchor_type")
+  anchorData Json      @map("anchor_data")
+  status     String    @default("open")
+  cta        String?
+  resolution String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+  resolvedBy String?   @map("resolved_by") @db.Uuid
+
+  document Document            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  creator  User                @relation("DiscussionCreator", fields: [createdBy], references: [id])
+  resolver User?               @relation("DiscussionResolver", fields: [resolvedBy], references: [id])
+  comments DiscussionComment[]
+  signoffs DiscussionSignoff[]
+
+  @@index([documentId, status])
+  @@map("discussions")
+}
+
+model DiscussionComment {
+  id           String   @id @default(uuid()) @db.Uuid
+  discussionId String   @map("discussion_id") @db.Uuid
+  authorId     String   @map("author_id") @db.Uuid
+  content      String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author     User       @relation(fields: [authorId], references: [id])
+
+  @@map("discussion_comments")
+}
+
+model DiscussionSignoff {
+  id           String   @id @default(uuid()) @db.Uuid
+  discussionId String   @map("discussion_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  signedAt     DateTime @default(now()) @map("signed_at")
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([discussionId, userId])
+  @@map("discussion_signoffs")
+}
+
+model DocumentGitCommit {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @map("document_id")
+  commitSha   String   @map("commit_sha")
+  eventType   String   @map("event_type")
+  summary     String
+  triggeredBy String?  @map("triggered_by") @db.Uuid
+  committedAt DateTime @default(now()) @map("committed_at")
+
+  document Document @relation(fields: [documentId], references: [id])
+  trigger  User?    @relation(fields: [triggeredBy], references: [id])
+
+  @@map("document_git_commits")
+}
+
+model Notification {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  documentId String?  @map("document_id")
+  type       String
+  payload    Json     @default("{}")
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  document Document? @relation(fields: [documentId], references: [id])
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@map("notifications")
+}
