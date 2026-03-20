@@ -20,8 +20,8 @@ Pactum is a Git-based document collaboration tool. PRD at `./PRD.md`. Design spe
 | Phase 2: Document CRUD | ✅ Done | Create, list, detail, auto-save, git commit |
 | Phase 3: Roles & Locking | ✅ Done | Permissions lib, member CRUD API, edit lock API, useEditLock hook, MemberManager UI |
 | Phase 4: Tiptap Editor | ✅ Done | Tiptap editor w/ toolbar, CodeMirror markdown mode, mode toggle, image upload (R2), server-side markdown conversion |
-| Phase 5: State Machine | ⏳ Pending | |
-| Phase 6: Discussions | ⏳ Pending | |
+| Phase 5: State Machine | ✅ Done | review/reopen/signoff API, auto-approve, state machine UI (DocumentActions + SignoffProgress) |
+| Phase 6: Discussions | ✅ Done | discussion CRUD + comments API, resolve/signoff API with git commit, discussion sidebar UI |
 | Phase 7: Git Diff Viewer | ⏳ Pending | |
 | Phase 8: Notifications | ⏳ Pending | |
 | Phase 9: @Mention + Polish | ⏳ Pending | |
@@ -30,10 +30,13 @@ Pactum is a Git-based document collaboration tool. PRD at `./PRD.md`. Design spe
 - Dev server: `npm run dev` works
 - DB: All 10 tables created via Prisma migration (PostgreSQL via Docker: `docker start pactum-postgres`)
 - Auth: Google OAuth configured (needs GOOGLE_CLIENT_ID/SECRET in .env.local)
-- Documents: Can create, list, view, edit with rich text (Tiptap) or markdown (CodeMirror), auto-save to DB
+- Documents: full state machine (draft → in_review → approved), reopen with reason, auto-save to DB
 - Editor: Tiptap with toolbar (headings, bold, italic, lists, code blocks, tables, links, images), CodeMirror markdown mode with mode toggle, image upload to R2
 - Permissions: Role-based access (creator, editor, reviewer, viewer), member CRUD, edit locking with heartbeat
-- Git: Initial commit on document create, docs-repo initialized on server start
+- Signoff: document-level signoff with auto-approve when all reviewers sign
+- Discussions: create, comment, resolve (no_change/need_change), discussion signoff, git commit on resolve
+- UI: two-column layout with editor + sidebar (Discussions/Members tabs), DocumentActions, SignoffProgress, new discussion button
+- Git: Initial commit on document create, git commit on discussion resolve, docs-repo initialized on server start
 - Tests: vitest configured, 29 tests passing (ULID, ApiError, GitService, permissions, markdown conversion)
 
 ## Key Files
@@ -55,22 +58,31 @@ Pactum is a Git-based document collaboration tool. PRD at `./PRD.md`. Design spe
 - `src/components/editor/ModeToggle.tsx` — richtext/markdown mode toggle
 - `src/components/editor/extensions/image-upload.ts` — Tiptap image upload extension
 - `src/components/documents/MemberManager.tsx` — member management UI
+- `src/components/documents/DocumentActions.tsx` — status transition buttons (submit, approve, reopen)
+- `src/components/documents/SignoffProgress.tsx` — signoff progress tracker
+- `src/app/api/documents/[id]/review/route.ts` — submit for review API
+- `src/app/api/documents/[id]/reopen/route.ts` — reopen document API
+- `src/app/api/documents/[id]/signoff/route.ts` — signoff (POST) API
+- `src/app/api/documents/[id]/signoffs/route.ts` — list signoffs (GET) API
+- `src/app/api/documents/[id]/discussions/route.ts` — create/list discussions API
+- `src/app/api/discussions/[discussionId]/route.ts` — discussion detail API
+- `src/app/api/discussions/[discussionId]/comments/route.ts` — comments CRUD API
+- `src/app/api/discussions/[discussionId]/resolve/route.ts` — resolve discussion API (with git commit)
+- `src/app/api/discussions/[discussionId]/signoff/route.ts` — discussion signoff API
+- `src/components/discussions/DiscussionSidebar.tsx` — discussion sidebar with tabs
+- `src/components/discussions/DiscussionThread.tsx` — discussion thread with comments
+- `src/components/discussions/CommentForm.tsx` — comment input form
+- `src/components/discussions/DiscussionSignoff.tsx` — discussion signoff UI
 - `src/hooks/useAutoSave.ts` — debounced auto-save hook
 - `src/hooks/useEditLock.ts` — edit lock acquisition/release hook
 - `src/app/documents/[id]/page.tsx` — document detail page (Tiptap + markdown editor integrated)
 
 ## Next Step
-Start Phase 5 (Document State Machine + Git Commit automation).
-
-Tasks:
-1. Implement document status transitions (draft -> in_review -> approved, with rollback via need_change)
-2. Create state machine logic with validation rules
-3. Add git commit on status transitions (snapshot document content)
-4. Build status transition UI (submit for review, approve, request changes)
-5. Add transition history/audit log
+Start Phase 7 (Git Diff Viewer).
 
 ## Known Issues
 - [ ] Google OAuth Client ID needs to be created in Google Cloud Console
 - [ ] ALLOWED_DOMAIN env var needs to be set to company domain
 - [ ] docs-repo remote (DOCS_REPO_REMOTE) not configured — commits are local only
 - [ ] prisma.config.ts has a TypeScript warning (Prisma 7.x migration artifact)
+- [ ] AI resolution summary is a stub — TODO: integrate LLM API
