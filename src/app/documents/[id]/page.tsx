@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/documents/StatusBadge';
+import { MemberManager } from '@/components/documents/MemberManager';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useEditLock } from '@/hooks/useEditLock';
 import type { DocumentStatus } from '@/types';
 
 interface DocumentDetail {
@@ -16,6 +19,8 @@ interface DocumentDetail {
   tags: { tag: string }[];
   creator: { id: string; name: string; email: string; avatarUrl: string | null };
   updatedAt: string;
+  lockedBy: string | null;
+  locker: { id: string; name: string } | null;
 }
 
 const saveStatusLabel: Record<string, string> = {
@@ -28,6 +33,7 @@ const saveStatusLabel: Record<string, string> = {
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
   const documentId = params.id;
+  const { data: session } = useSession();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['document', documentId],
@@ -38,17 +44,27 @@ export default function DocumentDetailPage() {
     },
   });
 
+  const doc = data?.data;
+  const isCreator = !!session?.user?.id && !!doc && session.user.id === doc.creator.id;
+  const isApproved = doc?.status === 'approved';
+  const canEditDoc = !isApproved;
+
+  const { isLocked, lockedByMe, lockedByName, acquiring } = useEditLock({
+    documentId,
+    enabled: !!doc && canEditDoc,
+  });
+
   const { status: saveStatus, save } = useAutoSave(documentId);
   const [content, setContent] = useState('');
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (data?.data && !initialized) {
-      const raw = data.data.content;
+    if (doc && !initialized) {
+      const raw = doc.content;
       setContent(typeof raw === 'string' ? raw : JSON.stringify(raw, null, 2));
       setInitialized(true);
     }
-  }, [data, initialized]);
+  }, [doc, initialized]);
 
   const handleChange = (value: string) => {
     setContent(value);
@@ -59,51 +75,73 @@ export default function DocumentDetailPage() {
     return <p className="text-muted-foreground">Loading document...</p>;
   }
 
-  if (error || !data?.data) {
+  if (error || !doc) {
     return <p className="text-destructive">Failed to load document.</p>;
   }
 
-  const doc = data.data;
-  const isApproved = doc.status === 'approved';
+  const isEditable = canEditDoc && lockedByMe;
+  const isLockedByOther = isLocked && !lockedByMe;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">{doc.title}</h1>
-          <StatusBadge status={doc.status} />
+    <div className="flex gap-8">
+      <div className="flex-1 space-y-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{doc.title}</h1>
+            <StatusBadge status={doc.status} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>{doc.creator.name}</span>
+            {doc.tags.map(({ tag }) => (
+              <Badge key={tag} variant="ghost">
+                {tag}
+              </Badge>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span>{doc.creator.name}</span>
-          {doc.tags.map(({ tag }) => (
-            <Badge key={tag} variant="ghost">
-              {tag}
-            </Badge>
-          ))}
+
+        {acquiring && (
+          <p className="text-sm text-muted-foreground">Acquiring edit lock...</p>
+        )}
+
+        {isLockedByOther && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            {lockedByName || 'Someone is currently editing this document.'}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Content</span>
+            {saveStatus !== 'idle' && (
+              <span
+                className={`text-xs ${
+                  saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'
+                }`}
+              >
+                {saveStatusLabel[saveStatus]}
+              </span>
+            )}
+          </div>
+          <textarea
+            className="min-h-[400px] w-full rounded-lg border border-input bg-transparent p-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            value={content}
+            onChange={(e) => handleChange(e.target.value)}
+            disabled={!isEditable}
+            placeholder={
+              isApproved
+                ? 'This document is approved and cannot be edited.'
+                : isLockedByOther
+                  ? 'This document is locked by another user.'
+                  : 'Start writing...'
+            }
+          />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Content</span>
-          {saveStatus !== 'idle' && (
-            <span
-              className={`text-xs ${
-                saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'
-              }`}
-            >
-              {saveStatusLabel[saveStatus]}
-            </span>
-          )}
-        </div>
-        <textarea
-          className="min-h-[400px] w-full rounded-lg border border-input bg-transparent p-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-          value={content}
-          onChange={(e) => handleChange(e.target.value)}
-          disabled={isApproved}
-          placeholder={isApproved ? 'This document is approved and cannot be edited.' : 'Start writing...'}
-        />
-      </div>
+      <aside className="w-72 shrink-0 space-y-6">
+        <MemberManager documentId={documentId} isCreator={isCreator} />
+      </aside>
     </div>
   );
 }
