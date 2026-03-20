@@ -8,12 +8,22 @@ import type { Editor } from '@tiptap/react';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/documents/StatusBadge';
 import { MemberManager } from '@/components/documents/MemberManager';
+import { DocumentActions } from '@/components/documents/DocumentActions';
+import { SignoffProgress } from '@/components/documents/SignoffProgress';
 import { TiptapEditor } from '@/components/editor/TiptapEditor';
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { ModeToggle } from '@/components/editor/ModeToggle';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
-import type { DocumentStatus } from '@/types';
+import type { DocumentStatus, DocumentRole } from '@/types';
+
+interface DocumentMember {
+  id: string;
+  documentId: string;
+  userId: string;
+  role: string;
+  user: { id: string; name: string; email: string; avatarUrl: string | null };
+}
 
 interface DocumentDetail {
   id: string;
@@ -22,6 +32,7 @@ interface DocumentDetail {
   status: DocumentStatus;
   tags: { tag: string }[];
   creator: { id: string; name: string; email: string; avatarUrl: string | null };
+  members: DocumentMember[];
   updatedAt: string;
   lockedBy: string | null;
   locker: { id: string; name: string } | null;
@@ -52,6 +63,14 @@ export default function DocumentDetailPage() {
 
   const doc = data?.data;
   const isCreator = !!session?.user?.id && !!doc && session.user.id === doc.creator.id;
+  const userRoles: DocumentRole[] = (() => {
+    if (!session?.user?.id || !doc) return ['viewer'];
+    if (isCreator) return ['creator'];
+    const memberRoles = doc.members
+      .filter((m) => m.userId === session.user.id)
+      .map((m) => m.role as DocumentRole);
+    return memberRoles.length > 0 ? memberRoles : ['viewer'];
+  })();
   const isApproved = doc?.status === 'approved';
   const canEditDoc = !isApproved;
 
@@ -117,6 +136,13 @@ export default function DocumentDetailPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">{doc.title}</h1>
             <StatusBadge status={doc.status} />
+            <DocumentActions
+              documentId={documentId}
+              status={doc.status}
+              isCreator={isCreator}
+              userRoles={userRoles}
+              hasOpenDiscussions={false}
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{doc.creator.name}</span>
@@ -127,6 +153,10 @@ export default function DocumentDetailPage() {
             ))}
           </div>
         </div>
+
+        {doc.status === 'in_review' && (
+          <SignoffProgress documentId={documentId} />
+        )}
 
         {acquiring && (
           <p className="text-sm text-muted-foreground">Acquiring edit lock...</p>
