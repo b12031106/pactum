@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import type { Editor } from '@tiptap/react';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/documents/StatusBadge';
 import { MemberManager } from '@/components/documents/MemberManager';
+import { TiptapEditor } from '@/components/editor/TiptapEditor';
+import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { ModeToggle } from '@/components/editor/ModeToggle';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import type { DocumentStatus } from '@/types';
@@ -22,6 +26,8 @@ interface DocumentDetail {
   lockedBy: string | null;
   locker: { id: string; name: string } | null;
 }
+
+type EditorMode = 'richtext' | 'markdown';
 
 const saveStatusLabel: Record<string, string> = {
   idle: '',
@@ -55,21 +61,46 @@ export default function DocumentDetailPage() {
   });
 
   const { status: saveStatus, save } = useAutoSave(documentId);
-  const [content, setContent] = useState('');
+
+  // Editor state
+  const [mode, setMode] = useState<EditorMode>('richtext');
+  const editorRef = useRef<Editor | null>(null);
+  const [tiptapContent, setTiptapContent] = useState<unknown>(null);
+  const [markdownContent, setMarkdownContent] = useState('');
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (doc && !initialized) {
-      const raw = doc.content;
-      setContent(typeof raw === 'string' ? raw : JSON.stringify(raw, null, 2));
+      setTiptapContent(doc.content);
       setInitialized(true);
     }
   }, [doc, initialized]);
 
-  const handleChange = (value: string) => {
-    setContent(value);
-    save(value);
-  };
+  const isEditable = canEditDoc && lockedByMe;
+  const isLockedByOther = isLocked && !lockedByMe;
+
+  const handleModeToggle = useCallback(
+    (newMode: EditorMode) => {
+      if (newMode === mode) return;
+
+      if (newMode === 'markdown') {
+        // richtext -> markdown: extract markdown from Tiptap
+        const md =
+          editorRef.current?.storage.markdown?.getMarkdown?.() ?? '';
+        setMarkdownContent(md);
+        setMode('markdown');
+      } else {
+        // markdown -> richtext: feed markdown back into Tiptap
+        // We set tiptapContent to the markdown string; Tiptap's Markdown extension
+        // will parse it when setContent is called.
+        if (editorRef.current) {
+          editorRef.current.commands.setContent(markdownContent);
+        }
+        setMode('richtext');
+      }
+    },
+    [mode, markdownContent],
+  );
 
   if (isLoading) {
     return <p className="text-muted-foreground">Loading document...</p>;
@@ -78,9 +109,6 @@ export default function DocumentDetailPage() {
   if (error || !doc) {
     return <p className="text-destructive">Failed to load document.</p>;
   }
-
-  const isEditable = canEditDoc && lockedByMe;
-  const isLockedByOther = isLocked && !lockedByMe;
 
   return (
     <div className="flex gap-8">
@@ -113,29 +141,47 @@ export default function DocumentDetailPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Content</span>
-            {saveStatus !== 'idle' && (
-              <span
-                className={`text-xs ${
-                  saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'
-                }`}
-              >
-                {saveStatusLabel[saveStatus]}
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {saveStatus !== 'idle' && (
+                <span
+                  className={`text-xs ${
+                    saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'
+                  }`}
+                >
+                  {saveStatusLabel[saveStatus]}
+                </span>
+              )}
+              <ModeToggle mode={mode} onToggle={handleModeToggle} />
+            </div>
           </div>
-          <textarea
-            className="min-h-[400px] w-full rounded-lg border border-input bg-transparent p-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-            value={content}
-            onChange={(e) => handleChange(e.target.value)}
-            disabled={!isEditable}
-            placeholder={
-              isApproved
-                ? 'This document is approved and cannot be edited.'
-                : isLockedByOther
-                  ? 'This document is locked by another user.'
-                  : 'Start writing...'
-            }
-          />
+
+          {mode === 'richtext' ? (
+            <TiptapEditor
+              content={tiptapContent}
+              onUpdate={(json) => save(json)}
+              onEditorReady={(editor) => {
+                editorRef.current = editor;
+              }}
+              editable={isEditable}
+              documentId={documentId}
+              placeholder={
+                isApproved
+                  ? 'This document is approved and cannot be edited.'
+                  : isLockedByOther
+                    ? 'This document is locked by another user.'
+                    : 'Start writing...'
+              }
+            />
+          ) : (
+            <MarkdownEditor
+              value={markdownContent}
+              onChange={(md) => {
+                setMarkdownContent(md);
+                save(md);
+              }}
+              editable={isEditable}
+            />
+          )}
         </div>
       </div>
 
