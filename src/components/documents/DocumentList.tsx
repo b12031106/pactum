@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
+import { DocumentCardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { DocumentCard } from './DocumentCard';
 import type { DocumentStatus } from '@/types';
 
@@ -60,11 +61,19 @@ export function DocumentList() {
         </select>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">Loading...</p>}
+      {isLoading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <DocumentCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
       {error && <p className="text-destructive">Failed to load documents.</p>}
 
       {data && data.data.length === 0 && (
-        <p className="text-muted-foreground">No documents found.</p>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No documents found.</p>
+        </div>
       )}
 
       {data && data.data.length > 0 && (

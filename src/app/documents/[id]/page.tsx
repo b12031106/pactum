@@ -27,6 +27,7 @@ import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { ModeToggle } from '@/components/editor/ModeToggle';
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
+import { DocumentDetailSkeleton } from '@/components/ui/LoadingSkeleton';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import { canCreateDiscussion as checkCanCreateDiscussion, canResolveDiscussion } from '@/lib/permissions';
@@ -192,7 +193,7 @@ export default function DocumentDetailPage() {
   });
 
   if (isLoading) {
-    return <p className="text-muted-foreground">Loading document...</p>;
+    return <DocumentDetailSkeleton />;
   }
 
   if (error || !doc) {
