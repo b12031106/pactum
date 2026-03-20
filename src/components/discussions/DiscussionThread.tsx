@@ -176,7 +176,7 @@ export function DiscussionThread({
       )}
 
       {/* Comment form — only when open */}
-      {isOpen && <CommentForm discussionId={discussion.id} />}
+      {isOpen && <CommentForm discussionId={discussion.id} documentId={documentId} />}
     </div>
   );
 }

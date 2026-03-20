@@ -1,25 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { MentionSuggestion } from './MentionSuggestion';
 
 interface CommentFormProps {
   discussionId: string;
+  documentId: string;
   onSuccess?: () => void;
 }
 
-export function CommentForm({ discussionId, onSuccess }: CommentFormProps) {
+export function CommentForm({ discussionId, documentId, onSuccess }: CommentFormProps) {
   const queryClient = useQueryClient();
   const [content, setContent] = useState('');
+  const [mentions, setMentions] = useState<string[]>([]);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionVisible, setMentionVisible] = useState(false);
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const mutation = useMutation({
     mutationFn: async (text: string) => {
       const res = await fetch(`/api/discussions/${discussionId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({ content: text, mentions }),
       });
       if (!res.ok) {
         const body = await res.json();
@@ -29,6 +36,7 @@ export function CommentForm({ discussionId, onSuccess }: CommentFormProps) {
     },
     onSuccess: () => {
       setContent('');
+      setMentions([]);
       queryClient.invalidateQueries({ queryKey: ['discussion', discussionId] });
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
       toast.success('Comment added');
@@ -39,20 +47,59 @@ export function CommentForm({ discussionId, onSuccess }: CommentFormProps) {
     },
   });
 
+  const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setContent(value);
+
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+    if (atMatch) {
+      setMentionQuery(atMatch[1]);
+      setMentionVisible(true);
+      setMentionPosition({ top: (textareaRef.current?.offsetHeight ?? 0) + 4, left: 0 });
+    } else {
+      setMentionVisible(false);
+    }
+  }, []);
+
+  const handleMentionSelect = useCallback((user: { id: string; name: string }) => {
+    const cursorPos = textareaRef.current?.selectionStart ?? 0;
+    const text = content;
+    const beforeAt = text.slice(0, cursorPos).replace(/@\w*$/, '');
+    const afterCursor = text.slice(cursorPos);
+    setContent(`${beforeAt}@${user.name} ${afterCursor}`);
+    setMentions((prev) => [...new Set([...prev, user.id])]);
+    setMentionVisible(false);
+    textareaRef.current?.focus();
+  }, [content]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (mentionVisible) return; // Don't submit while selecting mention
     if (!content.trim()) return;
     mutation.mutate(content.trim());
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Write a comment..."
-        className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-[60px] resize-y"
-      />
+      <div className="relative">
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleInput}
+          placeholder="Write a comment... Use @ to mention"
+          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-[60px] resize-y"
+        />
+        <MentionSuggestion
+          documentId={documentId}
+          query={mentionQuery}
+          visible={mentionVisible}
+          onSelect={handleMentionSelect}
+          position={mentionPosition}
+        />
+      </div>
       <div className="flex justify-end">
         <Button
           size="sm"

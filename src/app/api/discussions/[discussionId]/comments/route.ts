@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, ApiError } from '@/lib/api-handler';
+import { sendNotification } from '@/lib/notifications';
 
 const userSelect = { id: true, name: true, email: true, avatarUrl: true };
 
@@ -15,6 +16,7 @@ export const POST = apiHandler(async (req, context) => {
 
   const discussion = await prisma.discussion.findUnique({
     where: { id: discussionId },
+    include: { document: { select: { title: true } } },
   });
 
   if (!discussion) throw new ApiError(404, 'NOT_FOUND', 'Discussion not found');
@@ -24,7 +26,7 @@ export const POST = apiHandler(async (req, context) => {
   }
 
   const body = await req.json();
-  const { content } = body as { content?: string };
+  const { content, mentions } = body as { content?: string; mentions?: string[] };
 
   if (!content || typeof content !== 'string' || content.trim().length === 0) {
     throw new ApiError(400, 'INVALID_INPUT', 'content must not be empty');
@@ -40,6 +42,19 @@ export const POST = apiHandler(async (req, context) => {
       author: { select: userSelect },
     },
   });
+
+  if (mentions?.length) {
+    sendNotification({
+      type: 'mentioned',
+      recipientIds: mentions.filter((uid: string) => uid !== session.user.id),
+      documentId: discussion.documentId,
+      payload: {
+        message: `${session.user.name} mentioned you in a discussion on "${discussion.document.title}"`,
+        documentTitle: discussion.document.title,
+        actorName: session.user.name,
+      },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ data: comment }, { status: 201 });
 });
