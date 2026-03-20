@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { apiHandler, ApiError } from '@/lib/api-handler';
 import { getDocumentRoles, needsSignoff } from '@/lib/permissions';
 import { getDocsGitService } from '@/lib/git';
+import { sendNotification, getRecipientsByRoles } from '@/lib/notifications';
 
 // POST /api/documents/:id/signoff — sign off on a document
 export const POST = apiHandler(async (_req, context) => {
@@ -127,12 +128,30 @@ export const POST = apiHandler(async (_req, context) => {
       });
     });
 
-    // TODO(Phase 8): Notify all document members
+    const allRecipients = await getRecipientsByRoles(id, document.createdBy, ['creator', 'editor', 'approver', 'advisor']);
+    sendNotification({
+      type: 'document_approved',
+      recipientIds: allRecipients,
+      documentId: id,
+      payload: {
+        message: `"${document.title}" has been approved by all signers`,
+        documentTitle: document.title,
+      },
+    }).catch(() => {});
 
     return NextResponse.json({ data: { signed: true, allSigned: true, status: 'approved' } });
   }
 
-  // TODO(Phase 8): Notify creator "{name} 已完成畫押"
+  sendNotification({
+    type: 'document_signed',
+    recipientIds: [document.createdBy],
+    documentId: id,
+    payload: {
+      message: `${session.user.name} signed off on "${document.title}"`,
+      documentTitle: document.title,
+      actorName: session.user.name,
+    },
+  }).catch(() => {});
 
   return NextResponse.json({ data: { signed: true, allSigned: false } });
 });

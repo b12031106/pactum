@@ -6,6 +6,7 @@ import { apiHandler, ApiError } from '@/lib/api-handler';
 import { getDocumentRoles, needsSignoff } from '@/lib/permissions';
 import { getDocsGitService } from '@/lib/git';
 import { tiptapJsonToMarkdown } from '@/lib/markdown';
+import { sendNotification } from '@/lib/notifications';
 
 // POST /api/discussions/:discussionId/signoff
 export const POST = apiHandler(async (_req, context) => {
@@ -151,7 +152,29 @@ export const POST = apiHandler(async (_req, context) => {
     where: { documentId: document.id, status: 'open' },
   });
 
-  // f. TODO(Phase 8): Notify creator
+  // f. Notify creator that discussion was resolved
+  sendNotification({
+    type: 'discussion_resolved',
+    recipientIds: [discussion.document.createdBy],
+    documentId: discussion.documentId,
+    payload: {
+      message: `Discussion resolved in "${discussion.document.title}"`,
+      documentTitle: discussion.document.title,
+    },
+  }).catch(() => {});
+
+  // If ALL discussions for the document are resolved
+  if (remainingOpen === 0) {
+    sendNotification({
+      type: 'all_discussions_resolved',
+      recipientIds: [discussion.document.createdBy],
+      documentId: discussion.documentId,
+      payload: {
+        message: `All discussions resolved in "${discussion.document.title}" — ready for signoff`,
+        documentTitle: discussion.document.title,
+      },
+    }).catch(() => {});
+  }
 
   // g. Return result
   return NextResponse.json({

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, ApiError } from '@/lib/api-handler';
 import { getDocumentRoles, canCreateDiscussion } from '@/lib/permissions';
+import { sendNotification } from '@/lib/notifications';
 
 const userSelect = { id: true, name: true, email: true, avatarUrl: true };
 
@@ -62,10 +63,11 @@ export const POST = apiHandler(async (req, context) => {
   }
 
   const body = await req.json();
-  const { anchorType, anchorData, content } = body as {
+  const { anchorType, anchorData, content, mentions } = body as {
     anchorType?: string;
     anchorData?: unknown;
     content?: string;
+    mentions?: string[];
   };
 
   if (!anchorType || (anchorType !== 'range' && anchorType !== 'line')) {
@@ -108,7 +110,18 @@ export const POST = apiHandler(async (req, context) => {
     });
   });
 
-  // TODO(Phase 8): Notify mentions + document creator
+  if (mentions?.length) {
+    sendNotification({
+      type: 'mentioned',
+      recipientIds: mentions.filter((uid: string) => uid !== session.user.id),
+      documentId: id,
+      payload: {
+        message: `${session.user.name} mentioned you in a discussion on "${document.title}"`,
+        documentTitle: document.title,
+        actorName: session.user.name,
+      },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ data: result }, { status: 201 });
 });

@@ -6,6 +6,7 @@ import { apiHandler, ApiError } from '@/lib/api-handler';
 import { getDocumentRoles, canStartReview } from '@/lib/permissions';
 import { getDocsGitService } from '@/lib/git';
 import { tiptapJsonToMarkdown } from '@/lib/markdown';
+import { sendNotification, getRecipientsByRoles } from '@/lib/notifications';
 
 // POST /api/documents/:id/review — transition draft → in_review
 export const POST = apiHandler(async (_req, context) => {
@@ -63,7 +64,17 @@ export const POST = apiHandler(async (_req, context) => {
     });
   });
 
-  // TODO(Phase 8): Notify all editor, advisor, approver
+  const recipientIds = await getRecipientsByRoles(id, document.createdBy, ['editor', 'advisor', 'approver'], session.user.id);
+  sendNotification({
+    type: 'review_started',
+    recipientIds,
+    documentId: id,
+    payload: {
+      message: `${session.user.name} submitted "${document.title}" for review`,
+      documentTitle: document.title,
+      actorName: session.user.name,
+    },
+  }).catch(() => {});
 
   return NextResponse.json({ data: { status: 'in_review', commitSha } });
 });

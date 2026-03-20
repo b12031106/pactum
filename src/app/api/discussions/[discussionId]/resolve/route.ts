@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, ApiError } from '@/lib/api-handler';
 import { getDocumentRoles, canResolveDiscussion } from '@/lib/permissions';
+import { sendNotification, getRecipientsByRoles } from '@/lib/notifications';
 
 // POST /api/discussions/:discussionId/resolve
 export const POST = apiHandler(async (req, context) => {
@@ -53,7 +54,22 @@ export const POST = apiHandler(async (req, context) => {
     },
   });
 
-  // TODO(Phase 8): Notify all editor + approver
+  const recipientIds = await getRecipientsByRoles(
+    discussion.documentId,
+    discussion.document.createdBy,
+    ['editor', 'approver'],
+    session.user.id,
+  );
+  sendNotification({
+    type: 'discussion_resolve_started',
+    recipientIds,
+    documentId: discussion.documentId,
+    payload: {
+      message: `${session.user.name} initiated discussion resolution in "${discussion.document.title}"`,
+      documentTitle: discussion.document.title,
+      actorName: session.user.name,
+    },
+  }).catch(() => {});
 
   return NextResponse.json({ data: updated });
 });
