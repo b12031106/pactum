@@ -26,6 +26,7 @@ import { TiptapEditor } from '@/components/editor/TiptapEditor';
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { ModeToggle } from '@/components/editor/ModeToggle';
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
+import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import { canCreateDiscussion as checkCanCreateDiscussion, canResolveDiscussion } from '@/lib/permissions';
@@ -58,7 +59,7 @@ interface DiscussionListItem {
 }
 
 type EditorMode = 'richtext' | 'markdown';
-type SidebarTab = 'discussions' | 'members';
+type SidebarTab = 'discussions' | 'members' | 'history';
 
 const saveStatusLabel: Record<string, string> = {
   idle: '',
@@ -316,6 +317,17 @@ export default function DocumentDetailPage() {
           >
             Members
           </button>
+          <button
+            type="button"
+            onClick={() => setSidebarTab('history')}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              sidebarTab === 'history'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            History
+          </button>
         </div>
 
         {/* New Discussion button */}
@@ -369,14 +381,18 @@ export default function DocumentDetailPage() {
           )}
 
         {/* Tab content */}
-        {sidebarTab === 'discussions' ? (
+        {sidebarTab === 'discussions' && (
           <DiscussionSidebar
             documentId={documentId}
             canResolve={canResolve}
             currentUserId={session?.user?.id}
           />
-        ) : (
+        )}
+        {sidebarTab === 'members' && (
           <MemberManager documentId={documentId} isCreator={isCreator} />
+        )}
+        {sidebarTab === 'history' && (
+          <HistorySidebar documentId={documentId} />
         )}
       </div>
     </div>
