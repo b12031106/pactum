@@ -67,7 +67,8 @@ export function TiptapEditor({
   })
 
   useEffect(() => {
-    if (editor && content && !contentSetRef.current) {
+    const isValidContent = content && typeof content === 'object' && 'type' in (content as Record<string, unknown>)
+    if (editor && isValidContent && !contentSetRef.current) {
       contentSetRef.current = true
       editor.commands.setContent(content as Parameters<typeof editor.commands.setContent>[0])
     }
