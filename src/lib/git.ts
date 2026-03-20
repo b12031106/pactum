@@ -118,7 +118,7 @@ export class GitService {
       try {
         return await this.git.diff([`${sha}^..${sha}`, '--', fileName]);
       } catch {
-        return await this.git.diff(['4b825dc642cb6eb9a060e54bf899d15363da7f63', sha, '--', fileName]);
+        return await this.git.diff(['4b825dc642cb6eb9a060e54bf8d69288fbee4904', sha, '--', fileName]);
       }
     });
   }
