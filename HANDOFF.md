@@ -100,14 +100,21 @@ Pactum is a Git-based document collaboration tool. PRD at `./PRD.md`. Design spe
 - `src/app/settings/page.tsx` — user notification preferences
 - `src/components/ui/LoadingSkeleton.tsx` — loading skeleton components
 
+## Key Files (Post-MVP)
+- `src/proxy.ts` — auth proxy (migrated from middleware.ts for Next.js 16)
+- `src/lib/ai.ts` — AI summary via Claude API (Haiku 4.5), with fallback
+- `src/lib/prisma.ts` — PrismaClient with @prisma/adapter-pg (Prisma 7)
+- `src/lib/permissions.server.ts` — server-only permission functions (getDocumentRoles)
+
 ## Next Step
-MVP feature-complete (Phase 0-9). Remaining work: production deployment setup, Google OAuth configuration, SMTP/Slack configuration, AI resolution summary integration (LLM API).
+MVP feature-complete. Production build passes. Remaining work: production deployment setup, Google OAuth configuration, SMTP/Slack configuration.
 
 ## Known Issues
 - [ ] Google OAuth Client ID needs to be created in Google Cloud Console
 - [ ] ALLOWED_DOMAIN env var needs to be set to company domain
 - [ ] docs-repo remote (DOCS_REPO_REMOTE) not configured — commits are local only
-- [ ] prisma.config.ts has a TypeScript warning (Prisma 7.x migration artifact)
-- [ ] AI resolution summary is a stub — TODO: integrate LLM API
+- [x] prisma.config.ts has a TypeScript warning (Prisma 7.x migration artifact) — fixed
+- [x] AI resolution summary is a stub — integrated Claude API (Haiku 4.5) with graceful fallback
 - [ ] SMTP_HOST/USER/PASS env vars not configured — email notifications skip silently
 - [ ] Slack webhook URLs per user not configured — Slack notifications skip silently
+- [ ] ANTHROPIC_API_KEY not configured — AI summary falls back to simple concatenation

@@ -6,7 +6,7 @@
 
 - **Next.js App Router** single project — API routes at `src/app/api/`, pages at `src/app/`
 - **Long-running Node.js process** (NOT serverless) — requires local filesystem, in-memory mutex, SSE connections
-- **PostgreSQL + Prisma ORM** — schema at `prisma/schema.prisma`, 10 models
+- **PostgreSQL + Prisma 7** — schema at `prisma/schema.prisma`, 10 models, uses `@prisma/adapter-pg`
 - **Git as audit trail** — `simple-git` + `async-mutex`, all ops go through `src/lib/git.ts`
 
 ## Conventions
@@ -29,7 +29,8 @@
 ### Permissions
 - Roles: `creator > editor > approver > advisor > viewer` (priority order)
 - Multi-role support: same user can have `editor + approver` via `@@unique([documentId, userId, role])`
-- All permission functions in `src/lib/permissions.ts` are pure: accept `DocumentRole[]`, return boolean
+- Pure permission functions in `src/lib/permissions.ts` — safe for client components
+- Server-only functions (e.g. `getDocumentRoles`) in `src/lib/permissions.server.ts`
 
 ### Git Operations
 - All public methods use `mutex.runExclusive()` — callers don't manage locks
@@ -65,3 +66,5 @@ npx prisma migrate dev         # Run migrations
 - Use `asChild` prop on shadcn components — use `render` prop (base-ui)
 - Modify git config inside GitService — use `--author` per commit
 - Call git operations without going through `GitService` class
+- Import `prisma` or server-only modules in client components — use `server-only` guard
+- Use `new PrismaClient()` without arguments — Prisma 7 requires `{ adapter }` or `{ accelerateUrl }`

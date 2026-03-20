@@ -8,6 +8,7 @@ import { getDocumentRoles } from '@/lib/permissions.server';
 import { getDocsGitService } from '@/lib/git';
 import { tiptapJsonToMarkdown } from '@/lib/markdown';
 import { sendNotification } from '@/lib/notifications';
+import { summarizeDiscussion, generateCommitSummary } from '@/lib/ai';
 
 // POST /api/discussions/:discussionId/signoff
 export const POST = apiHandler(async (_req, context) => {
@@ -20,7 +21,10 @@ export const POST = apiHandler(async (_req, context) => {
     where: { id: discussionId },
     include: {
       document: { include: { members: true } },
-      comments: { orderBy: { createdAt: 'asc' } },
+      comments: {
+        orderBy: { createdAt: 'asc' },
+        include: { author: { select: { name: true } } },
+      },
     },
   });
 
@@ -84,13 +88,15 @@ export const POST = apiHandler(async (_req, context) => {
   }
 
   // 6. All signed — resolve discussion
-  // a. Generate resolution summary stub
-  const concatenatedComments = discussion.comments
-    .map((c) => c.content)
-    .join(' ')
-    .slice(0, 500);
-  const resolution = `CTA: ${discussion.cta}. Summary: ${concatenatedComments}`;
-  // TODO: Replace with LLM API call for AI summary
+  // a. Generate resolution summary via AI
+  const resolution = await summarizeDiscussion({
+    documentTitle: discussion.document.title,
+    cta: discussion.cta as 'no_change' | 'need_change',
+    comments: discussion.comments.map((c) => ({
+      authorName: c.author.name,
+      content: c.content,
+    })),
+  });
 
   // b–e. Update discussion, git commit, documentGitCommit in transaction
   const git = getDocsGitService();
@@ -102,7 +108,7 @@ export const POST = apiHandler(async (_req, context) => {
   const currentGitContent = await git.readFile(document.gitFile);
   const contentUnchanged = currentGitContent !== null && currentGitContent === markdown;
 
-  const commitMessage = `docs: resolve discussion - ${document.title}`;
+  const commitMessage = await generateCommitSummary(document.title, resolution);
   const commitBody = `Discussion resolved with CTA: ${discussion.cta}\n\n${resolution}`;
 
   let commitSha: string;
