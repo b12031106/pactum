@@ -60,7 +60,7 @@ export function NotificationList({ onNavigate }: NotificationListProps) {
   if (notifications.length === 0) {
     return (
       <div className="flex flex-col items-center py-6 text-center px-4">
-        <p className="text-sm text-muted-foreground">You're all caught up!</p>
+        <p className="text-sm text-muted-foreground">You&apos;re all caught up!</p>
       </div>
     );
   }

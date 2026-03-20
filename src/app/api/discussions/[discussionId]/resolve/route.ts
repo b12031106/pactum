@@ -39,7 +39,8 @@ export const POST = apiHandler(async (req, context) => {
     throw new ApiError(403, 'FORBIDDEN', 'You do not have permission to resolve discussions');
   }
 
-  const body = await req.json();
+  let body: Record<string, unknown> = {};
+  try { body = await req.json(); } catch { /* empty body */ }
   const { cta } = body as { cta?: string };
 
   if (!cta || (cta !== 'no_change' && cta !== 'need_change')) {

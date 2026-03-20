@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 interface MentionUser {
@@ -32,11 +32,13 @@ export function MentionSuggestion({ documentId, query, visible, onSelect, positi
     enabled: visible && query.length > 0,
   });
 
-  const users = data?.data ?? [];
+  const users = useMemo(() => data?.data ?? [], [data?.data]);
 
-  useEffect(() => {
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (prevQuery !== query) {
+    setPrevQuery(query);
     setSelectedIndex(0);
-  }, [query]);
+  }
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

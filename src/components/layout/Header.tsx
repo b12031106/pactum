@@ -8,21 +8,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { Moon, Sun } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+
+function getInitialDark() {
+  if (typeof window === 'undefined') return false;
+  const stored = localStorage.getItem('theme');
+  const prefersDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', prefersDark);
+  return prefersDark;
+}
 
 export function Header() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('theme');
-    const prefersDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setDark(prefersDark);
-    document.documentElement.classList.toggle('dark', prefersDark);
-  }, []);
+  const [dark, setDark] = useState(getInitialDark);
 
   const toggleTheme = () => {
     const next = !dark;

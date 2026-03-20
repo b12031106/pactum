@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, lazy, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -130,20 +130,18 @@ export default function DocumentDetailPage() {
   const [mode, setMode] = useState<EditorMode>('richtext');
   const editorRef = useRef<Editor | null>(null);
   const [tiptapContent, setTiptapContent] = useState<unknown>(null);
+  const [contentInitialized, setContentInitialized] = useState(false);
   const [markdownContent, setMarkdownContent] = useState('');
-  const [initialized, setInitialized] = useState(false);
+
+  if (doc && !contentInitialized) {
+    setTiptapContent(doc.content);
+    setContentInitialized(true);
+  }
 
   // Sidebar state
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('discussions');
   const [newDiscOpen, setNewDiscOpen] = useState(false);
   const [newDiscContent, setNewDiscContent] = useState('');
-
-  useEffect(() => {
-    if (doc && !initialized) {
-      setTiptapContent(doc.content);
-      setInitialized(true);
-    }
-  }, [doc, initialized]);
 
   const isEditable = canEditDoc && lockedByMe;
   const isLockedByOther = isLocked && !lockedByMe;

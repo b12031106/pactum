@@ -38,9 +38,11 @@ export function TiptapEditor({
   const contentSetRef = useRef(false)
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
+        link: false,
       }),
       CodeBlockLowlight.configure({
         lowlight,

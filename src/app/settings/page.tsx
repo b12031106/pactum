@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,15 +45,15 @@ export default function SettingsPage() {
     },
   });
 
+  const [initializedId, setInitializedId] = useState<string | null>(null);
   const [prefs, setPrefs] = useState({ inApp: true, email: true, slack: false });
   const [webhookUrl, setWebhookUrl] = useState('');
 
-  useEffect(() => {
-    if (data?.data) {
-      setPrefs(data.data.notificationPrefs);
-      setWebhookUrl(data.data.slackWebhookUrl ?? '');
-    }
-  }, [data]);
+  if (data?.data && initializedId !== data.data.id) {
+    setInitializedId(data.data.id);
+    setPrefs(data.data.notificationPrefs);
+    setWebhookUrl(data.data.slackWebhookUrl ?? '');
+  }
 
   const mutation = useMutation({
     mutationFn: async () => {

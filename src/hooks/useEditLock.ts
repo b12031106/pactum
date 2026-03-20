@@ -76,7 +76,32 @@ export function useEditLock({ documentId, enabled }: UseEditLockOptions) {
 
   useEffect(() => {
     if (!enabled) return;
-    acquire();
+
+    let cancelled = false;
+
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setState((prev) => ({ ...prev, acquiring: true }));
+      try {
+        const res = await fetch(`/api/documents/${documentId}/lock`, {
+          method: 'POST',
+        });
+        if (cancelled) return;
+        if (res.ok) {
+          acquiredRef.current = true;
+          setState({ isLocked: true, lockedByMe: true, lockedByName: null, acquiring: false });
+        } else if (res.status === 409) {
+          const body = await res.json();
+          const message = body?.error?.message || 'Someone is currently editing';
+          setState({ isLocked: true, lockedByMe: false, lockedByName: message, acquiring: false });
+        } else {
+          setState((prev) => ({ ...prev, acquiring: false }));
+        }
+      } catch {
+        if (!cancelled) setState((prev) => ({ ...prev, acquiring: false }));
+      }
+    })();
 
     const handleBeforeUnload = () => {
       releaseSync();
@@ -85,8 +110,8 @@ export function useEditLock({ documentId, enabled }: UseEditLockOptions) {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
+      cancelled = true;
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Release on unmount
       if (acquiredRef.current) {
         fetch(`/api/documents/${documentId}/lock`, {
           method: 'DELETE',
@@ -95,7 +120,7 @@ export function useEditLock({ documentId, enabled }: UseEditLockOptions) {
         acquiredRef.current = false;
       }
     };
-  }, [enabled, acquire, releaseSync, documentId]);
+  }, [enabled, releaseSync, documentId]);
 
   return { ...state, acquire, release };
 }
