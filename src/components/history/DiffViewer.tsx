@@ -45,25 +45,27 @@ export function DiffViewer({ documentId, sha }: DiffViewerProps) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium truncate">{diffData.summary}</p>
-        <div className="flex gap-1">
+        <div className="flex gap-1" role="group" aria-label="Diff view style">
           <button
             type="button"
+            aria-pressed={style === 'line-by-line'}
             onClick={() => setStyle('line-by-line')}
-            className={`rounded px-2 py-1 text-xs ${
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               style === 'line-by-line'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
             Unified
           </button>
           <button
             type="button"
+            aria-pressed={style === 'side-by-side'}
             onClick={() => setStyle('side-by-side')}
-            className={`rounded px-2 py-1 text-xs ${
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               style === 'side-by-side'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
             Side by Side

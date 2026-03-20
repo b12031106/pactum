@@ -1,13 +1,58 @@
 "use client"
 
+import { memo, useState, useRef, useEffect } from "react"
 import type { Editor } from "@tiptap/react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface EditorToolbarProps {
   editor: Editor | null
 }
 
-export function EditorToolbar({ editor }: EditorToolbarProps) {
+function LinkPopover({ editor, onClose }: { editor: Editor; onClose: () => void }) {
+  const [url, setUrl] = useState(editor.getAttributes("link").href ?? "")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const apply = () => {
+    if (url.trim()) {
+      editor.chain().focus().setLink({ href: url.trim() }).run()
+    } else {
+      editor.chain().focus().unsetLink().run()
+    }
+    onClose()
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 animate-fade-in">
+      <Input
+        ref={inputRef}
+        type="url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { e.preventDefault(); apply() }
+          if (e.key === "Escape") { onClose(); editor.chain().focus().run() }
+        }}
+        placeholder="https://..."
+        className="h-7 w-48 text-xs"
+      />
+      <Button type="button" size="xs" onClick={apply}>
+        Apply
+      </Button>
+      <Button type="button" size="xs" variant="ghost" onClick={() => { onClose(); editor.chain().focus().run() }}>
+        Cancel
+      </Button>
+    </div>
+  )
+}
+
+export const EditorToolbar = memo(function EditorToolbar({ editor }: EditorToolbarProps) {
+  const [linkOpen, setLinkOpen] = useState(false)
+
   if (!editor) return null
 
   const items = [
@@ -68,20 +113,13 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     },
     {
       label: "Link",
-      action: () => {
-        const url = window.prompt("URL")
-        if (url) {
-          editor.chain().focus().setLink({ href: url }).run()
-        } else {
-          editor.chain().focus().unsetLink().run()
-        }
-      },
+      action: () => setLinkOpen(true),
       isActive: () => editor.isActive("link"),
     },
   ]
 
   return (
-    <div className="flex flex-wrap gap-1 border-b border-border p-2">
+    <div className="flex flex-wrap items-center gap-1 border-b border-border p-2">
       {items.map((item) => (
         <Button
           key={item.label}
@@ -93,6 +131,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           {item.label}
         </Button>
       ))}
+      {linkOpen && (
+        <LinkPopover editor={editor} onClose={() => setLinkOpen(false)} />
+      )}
     </div>
   )
-}
+})

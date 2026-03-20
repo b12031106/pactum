@@ -18,7 +18,7 @@ export function HistorySidebar({ documentId }: HistorySidebarProps) {
           <button
             type="button"
             onClick={() => setSelectedSha(null)}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-primary hover:underline transition-colors"
           >
             &larr; Back to commits
           </button>

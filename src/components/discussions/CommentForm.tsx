@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { MentionSuggestion } from './MentionSuggestion';
 
 interface CommentFormProps {
@@ -85,12 +86,11 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
       <div className="relative">
-        <textarea
+        <Textarea
           ref={textareaRef}
           value={content}
           onChange={handleInput}
           placeholder="Write a comment... Use @ to mention"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-[60px] resize-y"
         />
         <MentionSuggestion
           documentId={documentId}

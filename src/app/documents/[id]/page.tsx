@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -22,16 +22,19 @@ import { StatusBadge } from '@/components/documents/StatusBadge';
 import { MemberManager } from '@/components/documents/MemberManager';
 import { DocumentActions } from '@/components/documents/DocumentActions';
 import { SignoffProgress } from '@/components/documents/SignoffProgress';
-import { TiptapEditor } from '@/components/editor/TiptapEditor';
-import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { ModeToggle } from '@/components/editor/ModeToggle';
+import { Textarea } from '@/components/ui/textarea';
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
-import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { DocumentDetailSkeleton } from '@/components/ui/LoadingSkeleton';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import { canCreateDiscussion as checkCanCreateDiscussion, canResolveDiscussion } from '@/lib/permissions';
 import type { DocumentStatus, DocumentRole } from '@/types';
+
+// Lazy load heavy editor components (Tiptap ~200KB, CodeMirror ~150KB, diff2html ~100KB)
+const TiptapEditor = lazy(() => import('@/components/editor/TiptapEditor').then(m => ({ default: m.TiptapEditor })));
+const MarkdownEditor = lazy(() => import('@/components/editor/MarkdownEditor').then(m => ({ default: m.MarkdownEditor })));
+const HistorySidebar = lazy(() => import('@/components/history/HistorySidebar').then(m => ({ default: m.HistorySidebar })));
 
 interface DocumentMember {
   id: string;
@@ -82,6 +85,7 @@ export default function DocumentDetailPage() {
       if (!res.ok) throw new Error('Failed to fetch document');
       return res.json() as Promise<{ data: DocumentDetail }>;
     },
+    staleTime: 30_000,
   });
 
   const doc = data?.data;
@@ -201,12 +205,12 @@ export default function DocumentDetailPage() {
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col lg:flex-row gap-6">
       {/* Left: Editor */}
       <div className="flex-1 min-w-0 space-y-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{doc.title}</h1>
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-2xl font-bold truncate">{doc.title}</h1>
             <StatusBadge status={doc.status} />
             <DocumentActions
               documentId={documentId}
@@ -257,42 +261,48 @@ export default function DocumentDetailPage() {
             </div>
           </div>
 
-          {mode === 'richtext' ? (
-            <TiptapEditor
-              content={tiptapContent}
-              onUpdate={(json) => save(json)}
-              onEditorReady={(editor) => {
-                editorRef.current = editor;
-              }}
-              editable={isEditable}
-              documentId={documentId}
-              placeholder={
-                isApproved
-                  ? 'This document is approved and cannot be edited.'
-                  : isLockedByOther
-                    ? 'This document is locked by another user.'
-                    : 'Start writing...'
-              }
-            />
-          ) : (
-            <MarkdownEditor
-              value={markdownContent}
-              onChange={(md) => {
-                setMarkdownContent(md);
-                save(md);
-              }}
-              editable={isEditable}
-            />
-          )}
+          <Suspense fallback={<div className="min-h-[400px] rounded-lg border border-border animate-pulse bg-muted/30" />}>
+            {mode === 'richtext' ? (
+              <TiptapEditor
+                content={tiptapContent}
+                onUpdate={(json) => save(json)}
+                onEditorReady={(editor) => {
+                  editorRef.current = editor;
+                }}
+                editable={isEditable}
+                documentId={documentId}
+                placeholder={
+                  isApproved
+                    ? 'This document is approved and cannot be edited.'
+                    : isLockedByOther
+                      ? 'This document is locked by another user.'
+                      : 'Start writing...'
+                }
+              />
+            ) : (
+              <MarkdownEditor
+                value={markdownContent}
+                onChange={(md) => {
+                  setMarkdownContent(md);
+                  save(md);
+                }}
+                editable={isEditable}
+              />
+            )}
+          </Suspense>
         </div>
       </div>
 
       {/* Right: Sidebar */}
-      <div className="w-[350px] shrink-0 border-l pl-4 space-y-4">
+      <div className="w-full lg:w-[350px] lg:shrink-0 lg:border-l lg:pl-4 border-t lg:border-t-0 pt-4 lg:pt-0 space-y-4">
         {/* Tab buttons */}
-        <div className="flex gap-1">
+        <div role="tablist" className="flex gap-1">
           <button
             type="button"
+            role="tab"
+            id="tab-discussions"
+            aria-selected={sidebarTab === 'discussions'}
+            aria-controls="panel-discussions"
             onClick={() => setSidebarTab('discussions')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               sidebarTab === 'discussions'
@@ -309,6 +319,10 @@ export default function DocumentDetailPage() {
           </button>
           <button
             type="button"
+            role="tab"
+            id="tab-members"
+            aria-selected={sidebarTab === 'members'}
+            aria-controls="panel-members"
             onClick={() => setSidebarTab('members')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               sidebarTab === 'members'
@@ -320,6 +334,10 @@ export default function DocumentDetailPage() {
           </button>
           <button
             type="button"
+            role="tab"
+            id="tab-history"
+            aria-selected={sidebarTab === 'history'}
+            aria-controls="panel-history"
             onClick={() => setSidebarTab('history')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               sidebarTab === 'history'
@@ -356,12 +374,12 @@ export default function DocumentDetailPage() {
                   <label htmlFor="new-disc-content" className="text-sm font-medium">
                     Comment
                   </label>
-                  <textarea
+                  <Textarea
                     id="new-disc-content"
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-[100px]"
                     value={newDiscContent}
                     onChange={(e) => setNewDiscContent(e.target.value)}
                     placeholder="What would you like to discuss?"
+                    className="min-h-[100px]"
                   />
                 </div>
                 <DialogFooter>
@@ -383,17 +401,25 @@ export default function DocumentDetailPage() {
 
         {/* Tab content */}
         {sidebarTab === 'discussions' && (
-          <DiscussionSidebar
-            documentId={documentId}
-            canResolve={canResolve}
-            currentUserId={session?.user?.id}
-          />
+          <div role="tabpanel" id="panel-discussions" aria-labelledby="tab-discussions">
+            <DiscussionSidebar
+              documentId={documentId}
+              canResolve={canResolve}
+              currentUserId={session?.user?.id}
+            />
+          </div>
         )}
         {sidebarTab === 'members' && (
-          <MemberManager documentId={documentId} isCreator={isCreator} />
+          <div role="tabpanel" id="panel-members" aria-labelledby="tab-members">
+            <MemberManager documentId={documentId} isCreator={isCreator} />
+          </div>
         )}
         {sidebarTab === 'history' && (
-          <HistorySidebar documentId={documentId} />
+          <div role="tabpanel" id="panel-history" aria-labelledby="tab-history">
+            <Suspense fallback={<p className="text-sm text-muted-foreground">Loading history...</p>}>
+              <HistorySidebar documentId={documentId} />
+            </Suspense>
+          </div>
         )}
       </div>
     </div>

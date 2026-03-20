@@ -5,6 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { DocumentCardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { DocumentCard } from './DocumentCard';
+import { useDebouncedValue } from '@/hooks/useDebounce';
+import { SelectNative } from '@/components/ui/select-native';
+import { FileText } from 'lucide-react';
 import type { DocumentStatus } from '@/types';
 
 interface DocumentItem {
@@ -26,17 +29,19 @@ const statusOptions: { value: string; label: string }[] = [
 export function DocumentList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['documents', search, statusFilter],
+    queryKey: ['documents', debouncedSearch, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (search) params.set('search', search);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       if (statusFilter) params.set('status', statusFilter);
       const res = await fetch(`/api/documents?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch documents');
       return res.json() as Promise<{ data: DocumentItem[]; pagination: unknown }>;
     },
+    staleTime: 15_000,
   });
 
   return (
@@ -48,17 +53,16 @@ export function DocumentList() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
-        <select
+        <SelectNative
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
         >
           {statusOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
-        </select>
+        </SelectNative>
       </div>
 
       {isLoading && (
@@ -71,8 +75,14 @@ export function DocumentList() {
       {error && <p className="text-destructive">Failed to load documents.</p>}
 
       {data && data.data.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No documents found.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <FileText className="size-8 text-muted-foreground" />
+          </div>
+          <p className="text-lg font-medium">No documents yet</p>
+          <p className="mt-1 text-sm text-muted-foreground max-w-xs">
+            Create your first document to start collaborating with your team.
+          </p>
         </div>
       )}
 

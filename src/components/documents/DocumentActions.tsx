@@ -15,6 +15,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { needsSignoff } from '@/lib/permissions';
+import { Textarea } from '@/components/ui/textarea';
 import type { DocumentStatus, DocumentRole } from '@/types';
 
 interface DocumentActionsProps {
@@ -137,7 +138,7 @@ export function DocumentActions({
               <Button
                 size="sm"
                 disabled={hasOpenDiscussions}
-                title={hasOpenDiscussions ? '還有未結案的討論' : undefined}
+                title={hasOpenDiscussions ? 'There are unresolved discussions' : undefined}
               />
             }
           >
@@ -145,9 +146,9 @@ export function DocumentActions({
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>確認畫押</DialogTitle>
+              <DialogTitle>Confirm Sign Off</DialogTitle>
               <DialogDescription>
-                確認畫押後代表您已閱讀並同意此份文件內容，此操作不可撤銷。
+                By signing off, you confirm that you have read and agree to this document. This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -185,12 +186,12 @@ export function DocumentActions({
               <label htmlFor="reopen-reason" className="text-sm font-medium">
                 Reason
               </label>
-              <textarea
+              <Textarea
                 id="reopen-reason"
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 min-h-[80px]"
                 value={reopenReason}
                 onChange={(e) => setReopenReason(e.target.value)}
                 placeholder="Why are you reopening this document?"
+                className="min-h-[80px]"
               />
             </div>
             <DialogFooter>

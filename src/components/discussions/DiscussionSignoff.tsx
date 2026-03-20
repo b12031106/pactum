@@ -120,7 +120,7 @@ export function DiscussionSignoff({
               <span
                 className={
                   signedUserIds.has(userId)
-                    ? 'text-green-600 dark:text-green-400'
+                    ? 'text-success'
                     : 'text-muted-foreground'
                 }
               >

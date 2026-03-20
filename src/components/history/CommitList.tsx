@@ -21,11 +21,11 @@ const EVENT_LABELS: Record<string, string> = {
 };
 
 const EVENT_COLORS: Record<string, string> = {
-  create: 'bg-blue-100 text-blue-800',
-  review_started: 'bg-yellow-100 text-yellow-800',
-  discussion_resolved: 'bg-green-100 text-green-800',
-  approved: 'bg-emerald-100 text-emerald-800',
-  reopened: 'bg-orange-100 text-orange-800',
+  create: 'bg-primary/10 text-primary',
+  review_started: 'bg-accent text-accent-foreground',
+  discussion_resolved: 'bg-success/15 text-success',
+  approved: 'bg-success/15 text-success',
+  reopened: 'bg-destructive/10 text-destructive',
 };
 
 interface CommitListProps {
@@ -65,7 +65,7 @@ export function CommitList({ documentId, selectedSha, onSelectCommit }: CommitLi
           <div className="flex items-center gap-2">
             <span
               className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                EVENT_COLORS[commit.eventType] ?? 'bg-gray-100 text-gray-800'
+                EVENT_COLORS[commit.eventType] ?? 'bg-muted text-muted-foreground'
               }`}
             >
               {EVENT_LABELS[commit.eventType] ?? commit.eventType}

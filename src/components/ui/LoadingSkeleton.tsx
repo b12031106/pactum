@@ -17,13 +17,13 @@ export function DocumentCardSkeleton() {
 
 export function DocumentDetailSkeleton() {
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col lg:flex-row gap-6">
       <div className="flex-1 space-y-4">
         <LoadingSkeleton className="h-8 w-1/3" />
         <LoadingSkeleton className="h-4 w-1/4" />
         <LoadingSkeleton className="h-64 w-full" />
       </div>
-      <div className="w-[350px] space-y-3">
+      <div className="w-full lg:w-[350px] space-y-3">
         <LoadingSkeleton className="h-8 w-full" />
         <LoadingSkeleton className="h-32 w-full" />
       </div>

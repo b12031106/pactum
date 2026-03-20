@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 import { CommentForm } from './CommentForm';
 import { DiscussionSignoff } from './DiscussionSignoff';
 import type { DiscussionStatus, DiscussionCta, AnchorType } from '@/types';
@@ -54,13 +55,7 @@ interface DiscussionThreadProps {
 }
 
 function formatTime(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
 }
 
 function AnchorLabel({ type, data }: { type: AnchorType; data: Record<string, unknown> }) {

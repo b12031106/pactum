@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
@@ -9,6 +9,8 @@ import { NotificationList } from './NotificationList';
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const { data } = useQuery({
@@ -23,40 +25,90 @@ export function NotificationBell() {
 
   const unreadCount = data?.pagination?.total ?? 0;
 
+  const close = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
   useEffect(() => {
+    if (!open) return;
+
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        close();
       }
     }
-    if (open) document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+        return;
+      }
+      // Focus trap: Tab within the panel
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Focus the first focusable element in the panel
+    requestAnimationFrame(() => {
+      const firstButton = panelRef.current?.querySelector<HTMLElement>('button');
+      firstButton?.focus();
+    });
+
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, close]);
 
   return (
     <div ref={ref} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(!open)}
         className="relative rounded-md p-2 hover:bg-accent transition-colors"
-        aria-label="Notifications"
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-primary-foreground" aria-hidden="true">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border bg-popover shadow-lg z-50">
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label="Notifications"
+          className="absolute right-0 top-full mt-2 w-80 rounded-lg border bg-popover shadow-lg z-50 animate-scale-in"
+        >
           <div className="border-b px-4 py-2">
             <h3 className="text-sm font-medium">Notifications</h3>
           </div>
           <NotificationList
             onNavigate={(docId) => {
-              setOpen(false);
+              close();
               router.push(`/documents/${docId}`);
             }}
           />

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from './StatusBadge';
@@ -14,15 +15,11 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ id, title, status, tags, creator, updatedAt }: DocumentCardProps) {
-  const formattedDate = new Date(updatedAt).toLocaleDateString('zh-Hant', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const formattedDate = formatDistanceToNow(new Date(updatedAt), { addSuffix: true });
 
   return (
-    <Link href={`/documents/${id}`} className="block">
-      <Card className="hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer">
+    <Link href={`/documents/${id}`} className="block group">
+      <Card className="transition-all group-hover:border-primary/40 group-hover:shadow-md animate-slide-up">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           <CardDescription>

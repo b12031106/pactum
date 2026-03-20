@@ -58,7 +58,11 @@ export function NotificationList({ onNavigate }: NotificationListProps) {
 
   const notifications = data?.data ?? [];
   if (notifications.length === 0) {
-    return <p className="p-4 text-sm text-muted-foreground">No notifications.</p>;
+    return (
+      <div className="flex flex-col items-center py-6 text-center px-4">
+        <p className="text-sm text-muted-foreground">You're all caught up!</p>
+      </div>
+    );
   }
 
   const hasUnread = notifications.some((n) => !n.isRead);

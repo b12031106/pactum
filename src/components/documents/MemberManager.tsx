@@ -3,6 +3,19 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { SelectNative } from '@/components/ui/select-native';
+import { Users } from 'lucide-react';
 
 interface MemberUser {
   id: string;
@@ -34,6 +47,7 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('editor');
   const [error, setError] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<GroupedMember | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['members', documentId],
@@ -80,6 +94,7 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['members', documentId] });
+      setRemoveTarget(null);
     },
   });
 
@@ -113,7 +128,12 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading...</p>
       ) : grouped.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No members yet.</p>
+        <div className="flex flex-col items-center py-6 text-center">
+          <div className="rounded-full bg-muted p-3 mb-2">
+            <Users className="size-5 text-muted-foreground" />
+          </div>
+          <p className="text-xs text-muted-foreground">No members added yet.</p>
+        </div>
       ) : (
         <ul className="space-y-2">
           {grouped.map((g) => (
@@ -129,14 +149,16 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
                   </Badge>
                 ))}
                 {isCreator && (
-                  <button
+                  <Button
                     type="button"
-                    className="ml-1 text-xs text-destructive hover:underline disabled:opacity-50"
-                    onClick={() => removeMutation.mutate(g.user.id)}
+                    variant="ghost"
+                    size="xs"
+                    className="ml-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setRemoveTarget(g)}
                     disabled={removeMutation.isPending}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
             </li>
@@ -147,33 +169,52 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
       {isCreator && (
         <form onSubmit={handleAdd} className="space-y-2">
           <div className="flex gap-2">
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@example.com"
-              className="flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex-1 h-8"
             />
-            <select
+            <SelectNative
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="editor">Editor</option>
               <option value="advisor">Advisor</option>
               <option value="approver">Approver</option>
-            </select>
-            <button
-              type="submit"
-              disabled={addMutation.isPending || !email.trim()}
-              className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
+            </SelectNative>
+            <Button type="submit" size="sm" disabled={addMutation.isPending || !email.trim()}>
               Add
-            </button>
+            </Button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
         </form>
       )}
+
+      {/* Remove confirmation dialog */}
+      <Dialog open={!!removeTarget} onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Member</DialogTitle>
+            <DialogDescription>
+              Remove <span className="font-medium text-foreground">{removeTarget?.user.name}</span> from this document? They will lose all assigned roles.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => removeTarget && removeMutation.mutate(removeTarget.user.id)}
+              disabled={removeMutation.isPending}
+            >
+              {removeMutation.isPending ? 'Removing...' : 'Remove'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

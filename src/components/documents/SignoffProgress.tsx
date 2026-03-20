@@ -53,7 +53,7 @@ export function SignoffProgress({ documentId }: SignoffProgressProps) {
         {signoffData.progress.map((entry) => (
           <li key={entry.user.id} className="flex items-center gap-2 text-sm">
             {entry.signed ? (
-              <CheckCircle2 className="size-4 text-green-600 shrink-0" />
+              <CheckCircle2 className="size-4 text-success shrink-0" />
             ) : (
               <Clock className="size-4 text-muted-foreground shrink-0" />
             )}

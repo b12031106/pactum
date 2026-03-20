@@ -63,11 +63,12 @@ export function DiscussionSidebar({
       </div>
 
       {/* Filter buttons */}
-      <div className="flex gap-1">
+      <div className="flex gap-1" role="group" aria-label="Filter discussions">
         {filterButtons.map((btn) => (
           <button
             key={btn.value}
             type="button"
+            aria-pressed={filter === btn.value}
             onClick={() => setFilter(btn.value)}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               filter === btn.value
@@ -84,7 +85,11 @@ export function DiscussionSidebar({
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading discussions...</p>
       ) : discussions.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No discussions yet.</p>
+        <div className="flex flex-col items-center py-6 text-center">
+          <p className="text-xs text-muted-foreground">
+            {filter === 'all' ? 'No discussions started yet.' : `No ${filter} discussions.`}
+          </p>
+        </div>
       ) : (
         <div className="space-y-2">
           {discussions.map((discussion) => {
@@ -101,6 +106,7 @@ export function DiscussionSidebar({
                   onClick={() =>
                     setExpandedId(isExpanded ? null : discussion.id)
                   }
+                  aria-expanded={isExpanded}
                   className="flex w-full items-center gap-2 p-2 text-left text-sm hover:bg-muted/50"
                 >
                   <span className="flex-1 truncate font-medium">
@@ -117,14 +123,12 @@ export function DiscussionSidebar({
                   <span className="text-xs text-muted-foreground">
                     {discussion._count?.comments ?? discussion.comments.length}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    {isExpanded ? '▲' : '▼'}
-                  </span>
+                  <svg className={`size-3 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 4.5l3 3 3-3" /></svg>
                 </button>
 
                 {/* Expanded content */}
                 {isExpanded && (
-                  <div className="border-t border-border p-3">
+                  <div className="border-t border-border p-3 animate-fade-in">
                     <DiscussionThread
                       discussion={discussion}
                       documentId={documentId}
