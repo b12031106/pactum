@@ -13,6 +13,7 @@ import { Placeholder } from "@tiptap/extension-placeholder"
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
 import { Markdown } from "tiptap-markdown"
 import { common, createLowlight } from "lowlight"
+import { ImageUpload } from "./extensions/image-upload"
 import { EditorToolbar } from "./EditorToolbar"
 
 const lowlight = createLowlight(common)
@@ -23,6 +24,7 @@ interface TiptapEditorProps {
   onEditorReady?: (editor: Editor) => void
   editable?: boolean
   placeholder?: string
+  documentId?: string
 }
 
 export function TiptapEditor({
@@ -31,6 +33,7 @@ export function TiptapEditor({
   onEditorReady,
   editable = true,
   placeholder = "Start writing...",
+  documentId,
 }: TiptapEditorProps) {
   const contentSetRef = useRef(false)
 
@@ -50,6 +53,7 @@ export function TiptapEditor({
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder }),
       Markdown,
+      ...(documentId ? [ImageUpload.configure({ documentId })] : []),
     ],
     editable,
     onCreate({ editor: createdEditor }) {
