@@ -3,6 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from './StatusBadge';
+import { UserHoverCard } from '@/components/UserHoverCard';
 import type { DocumentStatus } from '@/types';
 
 interface DocumentCardProps {
@@ -10,7 +11,7 @@ interface DocumentCardProps {
   title: string;
   status: DocumentStatus;
   tags: { tag: string }[];
-  creator: { name: string };
+  creator: { name: string; email?: string; avatarUrl?: string | null };
   updatedAt: string;
 }
 
@@ -23,7 +24,7 @@ export function DocumentCard({ id, title, status, tags, creator, updatedAt }: Do
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           <CardDescription>
-            {creator.name} &middot; {formattedDate}
+            <UserHoverCard user={creator}>{creator.name}</UserHoverCard> &middot; {formattedDate}
           </CardDescription>
         </CardHeader>
         <CardContent>

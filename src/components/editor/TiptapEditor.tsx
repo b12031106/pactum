@@ -67,6 +67,12 @@ export function TiptapEditor({
   })
 
   useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable)
+    }
+  }, [editor, editable])
+
+  useEffect(() => {
     const isValidContent = content && typeof content === 'object' && 'type' in (content as Record<string, unknown>)
     if (editor && isValidContent && !contentSetRef.current) {
       contentSetRef.current = true
@@ -75,8 +81,10 @@ export function TiptapEditor({
   }, [editor, content])
 
   return (
-    <div className="rounded-lg border border-border">
-      <EditorToolbar editor={editor} />
+    <div className={`rounded-lg border ${editable ? 'border-border' : 'border-border border-dashed bg-muted/30'}`}>
+      <div className={editable ? '' : 'opacity-50 pointer-events-none'}>
+        <EditorToolbar editor={editor} />
+      </div>
       <EditorContent
         editor={editor}
         className="prose prose-sm max-w-none min-h-[400px] p-4 focus:outline-none"

@@ -26,9 +26,11 @@ import { ModeToggle } from '@/components/editor/ModeToggle';
 import { Textarea } from '@/components/ui/textarea';
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
 import { DocumentDetailSkeleton } from '@/components/ui/LoadingSkeleton';
+import { Pencil, Lock, Eye } from 'lucide-react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import { canCreateDiscussion as checkCanCreateDiscussion, canResolveDiscussion } from '@/lib/permissions';
+import { UserHoverCard } from '@/components/UserHoverCard';
 import type { DocumentStatus, DocumentRole } from '@/types';
 
 // Lazy load heavy editor components (Tiptap ~200KB, CodeMirror ~150KB, diff2html ~100KB)
@@ -219,7 +221,7 @@ export default function DocumentDetailPage() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span>{doc.creator.name}</span>
+            <span><UserHoverCard user={doc.creator}>{doc.creator.name}</UserHoverCard></span>
             {doc.tags.map(({ tag }) => (
               <Badge key={tag} variant="ghost">
                 {tag}
@@ -244,7 +246,27 @@ export default function DocumentDetailPage() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Content</span>
+            {isEditable ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 text-success px-2.5 py-0.5 text-xs font-medium">
+                <Pencil className="h-3 w-3" />
+                Editing
+              </span>
+            ) : isApproved ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
+                <Lock className="h-3 w-3" />
+                Approved — Read Only
+              </span>
+            ) : isLockedByOther ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 py-0.5 text-xs font-medium">
+                <Lock className="h-3 w-3" />
+                Locked by {lockedByName}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
+                <Eye className="h-3 w-3" />
+                View Only
+              </span>
+            )}
             <div className="flex items-center gap-3">
               {saveStatus !== 'idle' && (
                 <span

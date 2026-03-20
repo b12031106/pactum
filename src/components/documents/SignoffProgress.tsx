@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Clock } from 'lucide-react';
+import { UserHoverCard } from '@/components/UserHoverCard';
 
 interface SignoffUser {
   id: string;
@@ -58,7 +59,7 @@ export function SignoffProgress({ documentId }: SignoffProgressProps) {
               <Clock className="size-4 text-muted-foreground shrink-0" />
             )}
             <span className={entry.signed ? 'text-foreground' : 'text-muted-foreground'}>
-              {entry.user.name}
+              <UserHoverCard user={entry.user}>{entry.user.name}</UserHoverCard>
             </span>
             {entry.signed && entry.signedAt && (
               <span className="text-xs text-muted-foreground ml-auto">

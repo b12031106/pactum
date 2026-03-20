@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentForm } from './CommentForm';
 import { DiscussionSignoff } from './DiscussionSignoff';
+import { UserHoverCard } from '@/components/UserHoverCard';
 import type { DiscussionStatus, DiscussionCta, AnchorType } from '@/types';
 
 interface User {
@@ -122,7 +123,7 @@ export function DiscussionThread({
         {discussion.comments.map((comment) => (
           <div key={comment.id} className="rounded-md bg-muted/50 p-2 text-sm">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{comment.author.name}</span>
+              <span className="font-medium text-foreground"><UserHoverCard user={comment.author}>{comment.author.name}</UserHoverCard></span>
               <span>{formatTime(comment.createdAt)}</span>
             </div>
             <p className="mt-1 whitespace-pre-wrap">{comment.content}</p>

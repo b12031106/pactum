@@ -15,7 +15,7 @@ interface DocumentItem {
   title: string;
   status: DocumentStatus;
   tags: { tag: string }[];
-  creator: { name: string };
+  creator: { name: string; email?: string; avatarUrl?: string | null };
   updatedAt: string;
 }
 

@@ -102,7 +102,7 @@ export function MarkdownEditor({
   return (
     <div
       ref={containerRef}
-      className="min-h-[400px] rounded-lg border border-border overflow-hidden [&_.cm-editor]:min-h-[400px] [&_.cm-scroller]:min-h-[400px]"
+      className={`min-h-[400px] rounded-lg border overflow-hidden [&_.cm-editor]:min-h-[400px] [&_.cm-scroller]:min-h-[400px] ${editable ? 'border-border' : 'border-border border-dashed bg-muted/30'}`}
     />
   )
 }

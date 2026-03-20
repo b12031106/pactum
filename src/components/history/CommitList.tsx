@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
+import { UserHoverCard } from '@/components/UserHoverCard';
 
 interface GitCommit {
   id: string;
@@ -73,7 +74,7 @@ export function CommitList({ documentId, selectedSha, onSelectCommit }: CommitLi
             <span className="truncate font-medium">{commit.summary}</span>
           </div>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{commit.trigger?.name ?? 'System'}</span>
+            <span>{commit.trigger ? <UserHoverCard user={commit.trigger}>{commit.trigger.name}</UserHoverCard> : 'System'}</span>
             <span>·</span>
             <span>{formatDistanceToNow(new Date(commit.committedAt), { addSuffix: true })}</span>
           </div>

@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={jakarta.variable}>
         <Providers>
           <Header />
-          <main className="container py-6">{children}</main>
+          <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">{children}</main>
           <Toaster />
         </Providers>
       </body>

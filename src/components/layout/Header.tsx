@@ -37,7 +37,7 @@ export function Header() {
 
   return (
     <header className="border-b">
-      <div className="container flex h-14 items-center justify-between">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
         <Link href="/documents" className="text-lg font-bold">Pactum</Link>
         <nav className="flex items-center gap-2" aria-label="Main navigation">
           <Link
