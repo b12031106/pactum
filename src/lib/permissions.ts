@@ -1,5 +1,4 @@
 import type { DocumentRole } from '@/types';
-import { prisma } from '@/lib/prisma';
 
 const ROLE_PRIORITY: Record<DocumentRole, number> = {
   creator: 4,
@@ -47,20 +46,4 @@ export function needsSignoff(roles: DocumentRole[]): boolean {
 
 export function canCreateDiscussion(roles: DocumentRole[]): boolean {
   return hasAnyRole(roles, ['creator', 'editor', 'advisor', 'approver']);
-}
-
-export async function getDocumentRoles(
-  userId: string,
-  documentCreatedBy: string,
-  documentId: string,
-): Promise<DocumentRole[]> {
-  if (userId === documentCreatedBy) return ['creator'];
-
-  const members = await prisma.documentMember.findMany({
-    where: { documentId, userId },
-  });
-
-  if (members.length === 0) return ['viewer'];
-
-  return members.map((m) => m.role as DocumentRole);
 }

@@ -41,7 +41,7 @@ export async function sendNotification(options: SendNotificationOptions): Promis
           userId,
           documentId: documentId ?? null,
           type,
-          payload: payload as Record<string, unknown>,
+          payload: payload as unknown as import('@prisma/client').Prisma.InputJsonValue,
         },
         include: { user: { select: { email: true, notificationPrefs: true, slackWebhookUrl: true } } },
       }),

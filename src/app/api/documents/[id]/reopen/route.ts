@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, ApiError } from '@/lib/api-handler';
-import { getDocumentRoles, canReopen } from '@/lib/permissions';
+import { canReopen } from '@/lib/permissions';
+import { getDocumentRoles } from '@/lib/permissions.server';
 import { getDocsGitService } from '@/lib/git';
 
 // POST /api/documents/:id/reopen — transition in_review|approved → draft

@@ -149,8 +149,8 @@ export default function DocumentDetailPage() {
       if (newMode === mode) return;
 
       if (newMode === 'markdown') {
-        const md =
-          editorRef.current?.storage.markdown?.getMarkdown?.() ?? '';
+        const storage = editorRef.current?.storage as unknown as { markdown?: { getMarkdown?: () => string } } | undefined;
+        const md = storage?.markdown?.getMarkdown?.() ?? '';
         setMarkdownContent(md);
         setMode('markdown');
       } else {

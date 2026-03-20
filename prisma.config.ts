@@ -35,16 +35,8 @@ const databaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://localhost:5432/pactum?schema=public';
 
 export default defineConfig({
-  earlyAccess: true,
   schema: path.join(__dirname, 'prisma', 'schema.prisma'),
   datasource: {
     url: databaseUrl,
-  },
-  migrate: {
-    async resolve() {
-      return {
-        url: databaseUrl,
-      };
-    },
   },
 });

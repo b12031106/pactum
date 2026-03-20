@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiHandler, ApiError } from '@/lib/api-handler';
-import { getDocumentRoles, canManageMembers } from '@/lib/permissions';
+import { canManageMembers } from '@/lib/permissions';
+import { getDocumentRoles } from '@/lib/permissions.server';
 import type { MemberRole } from '@/types';
 
 const VALID_ROLES: MemberRole[] = ['editor', 'advisor', 'approver'];
