@@ -6,6 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 export function Header() {
   const { data: session } = useSession();
@@ -15,7 +16,10 @@ export function Header() {
     <header className="border-b">
       <div className="container flex h-14 items-center justify-between">
         <Link href="/documents" className="text-lg font-bold">Pactum</Link>
-        <DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Settings</Link>
+          <NotificationBell />
+          <DropdownMenu>
           <DropdownMenuTrigger className="relative h-8 w-8 rounded-full focus:outline-none">
             <Avatar className="h-8 w-8">
               <AvatarImage src={session.user.image || undefined} />
@@ -29,6 +33,7 @@ export function Header() {
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </header>
   );
