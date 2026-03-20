@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TagSelector } from '@/components/documents/TagSelector';
+import { useI18n } from '@/i18n/context';
 
 export default function NewDocumentPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -19,7 +21,7 @@ export default function NewDocumentPage() {
     setError('');
 
     if (!title.trim()) {
-      setError('Title is required');
+      setError(t('newDoc.titleRequired'));
       return;
     }
 
@@ -46,14 +48,14 @@ export default function NewDocumentPage() {
 
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className="text-2xl font-bold">New Document</h1>
+      <h1 className="text-2xl font-bold">{t('newDoc.title')}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
+          <Label htmlFor="title">{t('newDoc.titleLabel')}</Label>
           <Input
             id="title"
-            placeholder="Document title"
+            placeholder={t('newDoc.titlePlaceholder')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
@@ -61,7 +63,7 @@ export default function NewDocumentPage() {
         </div>
 
         <div className="space-y-2">
-          <Label>Tags</Label>
+          <Label>{t('newDoc.tags')}</Label>
           <TagSelector tags={tags} onChange={setTags} />
         </div>
 
@@ -69,10 +71,10 @@ export default function NewDocumentPage() {
 
         <div className="flex gap-3">
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Creating...' : 'Create Document'}
+            {submitting ? t('newDoc.creating') : t('newDoc.create')}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
+            {t('actions.cancel')}
           </Button>
         </div>
       </form>

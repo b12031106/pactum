@@ -3,6 +3,7 @@
 import { SessionProvider } from 'next-auth/react';
 import { QueryProvider } from '@/lib/query-client';
 import { useSSE } from '@/hooks/useSSE';
+import { I18nProvider } from '@/i18n/context';
 
 function SSEProvider({ children }: { children: React.ReactNode }) {
   useSSE();
@@ -13,7 +14,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <QueryProvider>
-        <SSEProvider>{children}</SSEProvider>
+        <I18nProvider>
+          <SSEProvider>{children}</SSEProvider>
+        </I18nProvider>
       </QueryProvider>
     </SessionProvider>
   );

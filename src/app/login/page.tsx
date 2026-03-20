@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n/context';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const { t } = useI18n();
 
   const handleSignIn = () => {
     setLoading(true);
@@ -27,7 +29,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-4xl font-bold tracking-tight">Pactum</h1>
           <p className="text-muted-foreground text-balance leading-relaxed">
-            Collaborate on documents with git-powered version control, discussions, and signoff workflows.
+            {t('app.description')}
           </p>
         </div>
 
@@ -38,10 +40,10 @@ export default function LoginPage() {
             onClick={handleSignIn}
             disabled={loading}
           >
-            {loading ? 'Signing in...' : 'Sign in with Google'}
+            {loading ? t('auth.signingIn') : t('auth.signInGoogle')}
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            Sign in with your organization Google account
+            {t('auth.signInHint')}
           </p>
         </div>
       </div>

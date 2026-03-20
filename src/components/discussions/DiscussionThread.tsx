@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { CommentForm } from './CommentForm';
 import { DiscussionSignoff } from './DiscussionSignoff';
 import { UserHoverCard } from '@/components/UserHoverCard';
+import { useI18n } from '@/i18n/context';
 import type { DiscussionStatus, DiscussionCta, AnchorType } from '@/types';
 
 interface User {
@@ -82,6 +83,7 @@ export function DiscussionThread({
   canResolve,
   currentUserId,
 }: DiscussionThreadProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const isOpen = discussion.status === 'open';
 
@@ -99,7 +101,7 @@ export function DiscussionThread({
       return res.json();
     },
     onSuccess: () => {
-      toast.success('Discussion CTA set');
+      toast.success(t('discussions.ctaSet'));
       queryClient.invalidateQueries({ queryKey: ['discussion', discussion.id] });
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
     },
@@ -140,7 +142,7 @@ export function DiscussionThread({
             onClick={() => resolveMutation.mutate('no_change')}
             disabled={resolveMutation.isPending}
           >
-            No Change
+            {t('discussions.noChange')}
           </Button>
           <Button
             size="sm"
@@ -148,7 +150,7 @@ export function DiscussionThread({
             onClick={() => resolveMutation.mutate('need_change')}
             disabled={resolveMutation.isPending}
           >
-            Need Change
+            {t('discussions.needChange')}
           </Button>
         </div>
       )}
@@ -167,7 +169,7 @@ export function DiscussionThread({
       {/* Resolution text — when resolved */}
       {!isOpen && discussion.resolution && (
         <div className="rounded-md border border-border bg-muted/30 p-2 text-xs text-muted-foreground">
-          <span className="font-medium">Resolution:</span> {discussion.resolution}
+          <span className="font-medium">{t('discussions.resolution')}</span> {discussion.resolution}
         </div>
       )}
 

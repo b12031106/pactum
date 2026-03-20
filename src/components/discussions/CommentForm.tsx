@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MentionSuggestion } from './MentionSuggestion';
+import { useI18n } from '@/i18n/context';
 
 interface CommentFormProps {
   discussionId: string;
@@ -14,6 +15,7 @@ interface CommentFormProps {
 }
 
 export function CommentForm({ discussionId, documentId, onSuccess }: CommentFormProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [content, setContent] = useState('');
   const [mentions, setMentions] = useState<string[]>([]);
@@ -40,7 +42,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
       setMentions([]);
       queryClient.invalidateQueries({ queryKey: ['discussion', discussionId] });
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
-      toast.success('Comment added');
+      toast.success(t('comments.added'));
       onSuccess?.();
     },
     onError: (err: Error) => {
@@ -90,7 +92,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
           ref={textareaRef}
           value={content}
           onChange={handleInput}
-          placeholder="Write a comment... Use @ to mention"
+          placeholder={t('comments.placeholder')}
         />
         <MentionSuggestion
           documentId={documentId}
@@ -105,7 +107,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
           size="sm"
           disabled={mutation.isPending || !content.trim()}
         >
-          {mutation.isPending ? 'Sending...' : 'Comment'}
+          {mutation.isPending ? t('comments.sending') : t('comments.send')}
         </Button>
       </div>
     </form>

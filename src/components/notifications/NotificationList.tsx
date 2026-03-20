@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
+import { useI18n } from '@/i18n/context';
 
 interface NotificationItem {
   id: string;
@@ -17,6 +18,7 @@ interface NotificationListProps {
 }
 
 export function NotificationList({ onNavigate }: NotificationListProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -54,13 +56,13 @@ export function NotificationList({ onNavigate }: NotificationListProps) {
     },
   });
 
-  if (isLoading) return <p className="p-4 text-sm text-muted-foreground">Loading...</p>;
+  if (isLoading) return <p className="p-4 text-sm text-muted-foreground">{t('notifications.loading')}</p>;
 
   const notifications = data?.data ?? [];
   if (notifications.length === 0) {
     return (
       <div className="flex flex-col items-center py-6 text-center px-4">
-        <p className="text-sm text-muted-foreground">You&apos;re all caught up!</p>
+        <p className="text-sm text-muted-foreground">{t('notifications.allCaughtUp')}</p>
       </div>
     );
   }
@@ -76,7 +78,7 @@ export function NotificationList({ onNavigate }: NotificationListProps) {
             onClick={() => markAllReadMutation.mutate()}
             className="text-xs text-primary hover:underline"
           >
-            Mark all as read
+            {t('notifications.markAllRead')}
           </button>
         </div>
       )}

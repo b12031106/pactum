@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useI18n } from '@/i18n/context';
 
 function getInitialDark() {
   if (typeof window === 'undefined') return false;
@@ -24,6 +25,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [dark, setDark] = useState(getInitialDark);
+  const { t } = useI18n();
 
   const toggleTheme = () => {
     const next = !dark;
@@ -48,13 +50,13 @@ export function Header() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Settings
+            {t('nav.settings')}
           </Link>
           <button
             type="button"
             onClick={toggleTheme}
             className="rounded-md p-2 hover:bg-accent transition-colors"
-            aria-label="Toggle theme"
+            aria-label={t('nav.toggleTheme')}
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -71,8 +73,8 @@ export function Header() {
                 <div className="text-sm font-medium">{session.user.name}</div>
                 <div className="text-xs text-muted-foreground">{session.user.email}</div>
               </div>
-              <DropdownMenuItem className="sm:hidden" onClick={() => router.push('/settings')}>Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem className="sm:hidden" onClick={() => router.push('/settings')}>{t('nav.settings')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })}>{t('nav.signOut')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>

@@ -1,8 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { UserHoverCard } from '@/components/UserHoverCard';
+import { useI18n } from '@/i18n/context';
 
 interface GitCommit {
   id: string;
@@ -12,14 +14,6 @@ interface GitCommit {
   committedAt: string;
   trigger: { id: string; name: string; email: string; avatarUrl: string | null } | null;
 }
-
-const EVENT_LABELS: Record<string, string> = {
-  create: 'Created',
-  review_started: 'Review Started',
-  discussion_resolved: 'Discussion Resolved',
-  approved: 'Approved',
-  reopened: 'Reopened',
-};
 
 const EVENT_COLORS: Record<string, string> = {
   create: 'bg-primary/10 text-primary',
@@ -36,6 +30,16 @@ interface CommitListProps {
 }
 
 export function CommitList({ documentId, selectedSha, onSelectCommit }: CommitListProps) {
+  const { t } = useI18n();
+
+  const eventLabels = useMemo<Record<string, string>>(() => ({
+    create: t('history.created'),
+    review_started: t('history.reviewStarted'),
+    discussion_resolved: t('history.discussionResolved'),
+    approved: t('history.approved'),
+    reopened: t('history.reopened'),
+  }), [t]);
+
   const { data, isLoading } = useQuery({
     queryKey: ['commits', documentId],
     queryFn: async () => {
@@ -45,11 +49,11 @@ export function CommitList({ documentId, selectedSha, onSelectCommit }: CommitLi
     },
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading history...</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground">{t('history.loading')}</p>;
 
   const commits = data?.data ?? [];
   if (commits.length === 0) {
-    return <p className="text-sm text-muted-foreground">No commits yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t('history.noCommits')}</p>;
   }
 
   return (
@@ -69,12 +73,12 @@ export function CommitList({ documentId, selectedSha, onSelectCommit }: CommitLi
                 EVENT_COLORS[commit.eventType] ?? 'bg-muted text-muted-foreground'
               }`}
             >
-              {EVENT_LABELS[commit.eventType] ?? commit.eventType}
+              {eventLabels[commit.eventType] ?? commit.eventType}
             </span>
             <span className="truncate font-medium">{commit.summary}</span>
           </div>
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{commit.trigger ? <UserHoverCard user={commit.trigger}>{commit.trigger.name}</UserHoverCard> : 'System'}</span>
+            <span>{commit.trigger ? <UserHoverCard user={commit.trigger}>{commit.trigger.name}</UserHoverCard> : t('history.system')}</span>
             <span>·</span>
             <span>{formatDistanceToNow(new Date(commit.committedAt), { addSuffix: true })}</span>
           </div>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { DiscussionThread, type Discussion } from './DiscussionThread';
+import { useI18n } from '@/i18n/context';
 
 type FilterStatus = 'all' | 'open' | 'resolved';
 
@@ -18,6 +19,7 @@ export function DiscussionSidebar({
   canResolve,
   currentUserId,
 }: DiscussionSidebarProps) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -47,23 +49,23 @@ export function DiscussionSidebar({
   const allDiscussions = filter === 'all' ? discussions : (allData?.data ?? []);
   const openCount = allDiscussions.filter((d) => d.status === 'open').length;
 
-  const filterButtons: { label: string; value: FilterStatus }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Open', value: 'open' },
-    { label: 'Resolved', value: 'resolved' },
-  ];
+  const filterButtons = useMemo<{ label: string; value: FilterStatus }[]>(() => [
+    { label: t('discussions.all'), value: 'all' },
+    { label: t('discussions.open'), value: 'open' },
+    { label: t('discussions.resolved'), value: 'resolved' },
+  ], [t]);
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold">Discussions</h3>
+        <h3 className="text-sm font-semibold">{t('discussions.title')}</h3>
         {openCount > 0 && (
-          <Badge variant="destructive">{openCount} open</Badge>
+          <Badge variant="destructive">{openCount} {t('discussions.open').toLowerCase()}</Badge>
         )}
       </div>
 
       {/* Filter buttons */}
-      <div className="flex gap-1" role="group" aria-label="Filter discussions">
+      <div className="flex gap-1" role="group" aria-label={t('discussions.filterLabel')}>
         {filterButtons.map((btn) => (
           <button
             key={btn.value}
@@ -83,11 +85,11 @@ export function DiscussionSidebar({
 
       {/* Discussion list */}
       {isLoading ? (
-        <p className="text-xs text-muted-foreground">Loading discussions...</p>
+        <p className="text-xs text-muted-foreground">{t('discussions.loading')}</p>
       ) : discussions.length === 0 ? (
         <div className="flex flex-col items-center py-6 text-center">
           <p className="text-xs text-muted-foreground">
-            {filter === 'all' ? 'No discussions started yet.' : `No ${filter} discussions.`}
+            {filter === 'all' ? t('discussions.noDiscussions') : t('discussions.noFiltered', { filter })}
           </p>
         </div>
       ) : (

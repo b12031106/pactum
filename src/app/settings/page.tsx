@@ -6,6 +6,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SelectNative } from '@/components/ui/select-native';
+import { useI18n } from '@/i18n/context';
+import { LOCALES } from '@/i18n/index';
+import type { Locale } from '@/i18n/index';
 
 interface UserSettings {
   id: string;
@@ -34,6 +38,7 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (v
 }
 
 export default function SettingsPage() {
+  const { t, locale, setLocale } = useI18n();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -89,43 +94,52 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
+
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold">{t('settings.language')}</h2>
+        <SelectNative value={locale} onChange={(e) => setLocale(e.target.value as Locale)}>
+          {LOCALES.map((l) => (
+            <option key={l.value} value={l.value}>{l.label}</option>
+          ))}
+        </SelectNative>
+      </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-medium">Notification Preferences</h2>
+        <h2 className="text-lg font-medium">{t('settings.notifications')}</h2>
 
         <Checkbox
           checked={prefs.inApp}
           onChange={(v) => setPrefs({ ...prefs, inApp: v })}
-          label="In-app notifications"
+          label={t('settings.inApp')}
         />
         <Checkbox
           checked={prefs.email}
           onChange={(v) => setPrefs({ ...prefs, email: v })}
-          label="Email notifications"
+          label={t('settings.email')}
         />
         <Checkbox
           checked={prefs.slack}
           onChange={(v) => setPrefs({ ...prefs, slack: v })}
-          label="Slack notifications"
+          label={t('settings.slack')}
         />
 
         {prefs.slack && (
           <div className="space-y-2 animate-fade-in">
-            <Label htmlFor="slack-webhook">Slack Webhook URL</Label>
+            <Label htmlFor="slack-webhook">{t('settings.slackWebhook')}</Label>
             <Input
               id="slack-webhook"
               type="url"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://hooks.slack.com/services/..."
+              placeholder={t('settings.slackPlaceholder')}
             />
           </div>
         )}
       </div>
 
       <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-        {mutation.isPending ? 'Saving...' : 'Save Settings'}
+        {mutation.isPending ? t('settings.saving') : t('settings.save')}
       </Button>
     </div>
   );

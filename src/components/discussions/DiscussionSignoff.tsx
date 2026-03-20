@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/i18n/context';
 
 interface SignoffUser {
   id: string;
@@ -41,6 +42,7 @@ export function DiscussionSignoff({
   documentId,
   currentUserId,
 }: DiscussionSignoffProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   // Fetch document members to compute required signers
@@ -74,7 +76,7 @@ export function DiscussionSignoff({
       return res.json();
     },
     onSuccess: () => {
-      toast.success('Signed off on discussion');
+      toast.success(t('signoff.signedOff'));
       queryClient.invalidateQueries({ queryKey: ['discussion', discussionId] });
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
     },
@@ -103,14 +105,14 @@ export function DiscussionSignoff({
   return (
     <div className="space-y-2 rounded-md border border-border p-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <span>CTA:</span>
+        <span>{t('signoff.cta')}</span>
         <Badge variant={cta === 'need_change' ? 'destructive' : 'secondary'}>
-          {cta === 'need_change' ? 'Need Change' : 'No Change'}
+          {cta === 'need_change' ? t('discussions.needChange') : t('discussions.noChange')}
         </Badge>
       </div>
 
       <div className="text-xs text-muted-foreground">
-        Signoff progress: {signoffs.length} / {requiredSigners.size}
+        {t('signoff.signoffProgress', { signoffs: signoffs.length, required: requiredSigners.size })}
       </div>
 
       {requiredSigners.size > 0 && (
@@ -138,7 +140,7 @@ export function DiscussionSignoff({
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? 'Signing...' : 'Sign Off'}
+          {mutation.isPending ? t('actions.signing') : t('actions.signOff')}
         </Button>
       )}
     </div>

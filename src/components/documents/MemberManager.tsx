@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { SelectNative } from '@/components/ui/select-native';
 import { Users } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 
 interface MemberUser {
   id: string;
@@ -43,6 +44,7 @@ interface MemberManagerProps {
 }
 
 export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('editor');
@@ -123,16 +125,16 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold">Members</h3>
+      <h3 className="text-sm font-semibold">{t('members.title')}</h3>
 
       {isLoading ? (
-        <p className="text-xs text-muted-foreground">Loading...</p>
+        <p className="text-xs text-muted-foreground">{t('members.loading')}</p>
       ) : grouped.length === 0 ? (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="rounded-full bg-muted p-3 mb-2">
             <Users className="size-5 text-muted-foreground" />
           </div>
-          <p className="text-xs text-muted-foreground">No members added yet.</p>
+          <p className="text-xs text-muted-foreground">{t('members.noMembers')}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -157,7 +159,7 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
                     onClick={() => setRemoveTarget(g)}
                     disabled={removeMutation.isPending}
                   >
-                    Remove
+                    {t('members.remove')}
                   </Button>
                 )}
               </div>
@@ -173,7 +175,7 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="user@example.com"
+              placeholder={t('members.emailPlaceholder')}
               className="flex-1 h-8"
             />
             <SelectNative
@@ -185,7 +187,7 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
               <option value="approver">Approver</option>
             </SelectNative>
             <Button type="submit" size="sm" disabled={addMutation.isPending || !email.trim()}>
-              Add
+              {t('members.add')}
             </Button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
@@ -196,21 +198,21 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
       <Dialog open={!!removeTarget} onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove Member</DialogTitle>
+            <DialogTitle>{t('members.removeTitle')}</DialogTitle>
             <DialogDescription>
-              Remove <span className="font-medium text-foreground">{removeTarget?.user.name}</span> from this document? They will lose all assigned roles.
+              {t('members.removeDesc', { name: removeTarget?.user.name || '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>
-              Cancel
+              {t('actions.cancel')}
             </DialogClose>
             <Button
               variant="destructive"
               onClick={() => removeTarget && removeMutation.mutate(removeTarget.user.id)}
               disabled={removeMutation.isPending}
             >
-              {removeMutation.isPending ? 'Removing...' : 'Remove'}
+              {removeMutation.isPending ? t('members.removing') : t('members.remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

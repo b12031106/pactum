@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { needsSignoff } from '@/lib/permissions';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n/context';
 import type { DocumentStatus, DocumentRole } from '@/types';
 
 interface DocumentActionsProps {
@@ -35,6 +36,7 @@ export function DocumentActions({
   hasOpenDiscussions,
   onStatusChange,
 }: DocumentActionsProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [reopenOpen, setReopenOpen] = useState(false);
   const [signoffOpen, setSignoffOpen] = useState(false);
@@ -126,7 +128,7 @@ export function DocumentActions({
           onClick={() => reviewMutation.mutate()}
           disabled={reviewMutation.isPending}
         >
-          {reviewMutation.isPending ? 'Submitting...' : 'Submit for Review'}
+          {reviewMutation.isPending ? t('actions.submitting') : t('actions.submitReview')}
         </Button>
       )}
 
@@ -138,28 +140,28 @@ export function DocumentActions({
               <Button
                 size="sm"
                 disabled={hasOpenDiscussions}
-                title={hasOpenDiscussions ? 'There are unresolved discussions' : undefined}
+                title={hasOpenDiscussions ? t('actions.unresolvedDiscussions') : undefined}
               />
             }
           >
-            Sign Off
+            {t('actions.signOff')}
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirm Sign Off</DialogTitle>
+              <DialogTitle>{t('actions.confirmSignOff')}</DialogTitle>
               <DialogDescription>
-                By signing off, you confirm that you have read and agree to this document. This action cannot be undone.
+                {t('actions.confirmSignOffDesc')}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <DialogClose render={<Button variant="outline" />}>
-                Cancel
+                {t('actions.cancel')}
               </DialogClose>
               <Button
                 onClick={() => signoffMutation.mutate()}
                 disabled={signoffMutation.isPending}
               >
-                {signoffMutation.isPending ? 'Signing...' : 'Confirm Sign Off'}
+                {signoffMutation.isPending ? t('actions.signing') : t('actions.confirmSignOff')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -173,37 +175,37 @@ export function DocumentActions({
           if (!open) setReopenReason('');
         }}>
           <DialogTrigger render={<Button variant="outline" size="sm" />}>
-            Reopen
+            {t('actions.reopen')}
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Reopen Document</DialogTitle>
+              <DialogTitle>{t('actions.reopenDocument')}</DialogTitle>
               <DialogDescription>
-                This will move the document back to draft status. Please provide a reason.
+                {t('actions.reopenDesc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
               <label htmlFor="reopen-reason" className="text-sm font-medium">
-                Reason
+                {t('actions.reason')}
               </label>
               <Textarea
                 id="reopen-reason"
                 value={reopenReason}
                 onChange={(e) => setReopenReason(e.target.value)}
-                placeholder="Why are you reopening this document?"
+                placeholder={t('actions.reasonPlaceholder')}
                 className="min-h-[80px]"
               />
             </div>
             <DialogFooter>
               <DialogClose render={<Button variant="outline" />}>
-                Cancel
+                {t('actions.cancel')}
               </DialogClose>
               <Button
                 variant="destructive"
                 onClick={() => reopenMutation.mutate(reopenReason)}
                 disabled={reopenMutation.isPending || !reopenReason.trim()}
               >
-                {reopenMutation.isPending ? 'Reopening...' : 'Reopen'}
+                {reopenMutation.isPending ? t('actions.reopening') : t('actions.reopen')}
               </Button>
             </DialogFooter>
           </DialogContent>

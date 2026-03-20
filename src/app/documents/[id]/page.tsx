@@ -31,6 +31,7 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import { canCreateDiscussion as checkCanCreateDiscussion, canResolveDiscussion } from '@/lib/permissions';
 import { UserHoverCard } from '@/components/UserHoverCard';
+import { useI18n } from '@/i18n/context';
 import type { DocumentStatus, DocumentRole } from '@/types';
 
 // Lazy load heavy editor components (Tiptap ~200KB, CodeMirror ~150KB, diff2html ~100KB)
@@ -62,22 +63,17 @@ interface DocumentDetail {
 interface DiscussionListItem {
   id: string;
   status: string;
+  cta: string | null;
 }
 
 type EditorMode = 'richtext' | 'markdown';
 type SidebarTab = 'discussions' | 'members' | 'history';
 
-const saveStatusLabel: Record<string, string> = {
-  idle: '',
-  saving: 'Saving...',
-  saved: 'Saved',
-  error: 'Save failed',
-};
-
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
   const documentId = params.id;
   const { data: session } = useSession();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -101,7 +97,6 @@ export default function DocumentDetailPage() {
     return memberRoles.length > 0 ? memberRoles : ['viewer'];
   })();
   const isApproved = doc?.status === 'approved';
-  const canEditDoc = !isApproved;
   const canResolve = canResolveDiscussion(userRoles);
   const canCreateDisc = checkCanCreateDiscussion(userRoles);
 
@@ -120,6 +115,12 @@ export default function DocumentDetailPage() {
     (d) => d.status === 'open',
   ).length;
   const hasOpenDiscussions = openDiscussionCount > 0;
+
+  // Match backend logic: in_review requires at least one need_change discussion to edit
+  const hasNeedChange = (discussionsData?.data ?? []).some(
+    (d) => d.status === 'open' && d.cta === 'need_change',
+  );
+  const canEditDoc = !isApproved && (doc?.status !== 'in_review' || hasNeedChange);
 
   const { isLocked, lockedByMe, lockedByName, acquiring } = useEditLock({
     documentId,
@@ -201,7 +202,7 @@ export default function DocumentDetailPage() {
   }
 
   if (error || !doc) {
-    return <p className="text-destructive">Failed to load document.</p>;
+    return <p className="text-destructive">{t('document.loadFailed')}</p>;
   }
 
   return (
@@ -235,12 +236,12 @@ export default function DocumentDetailPage() {
         )}
 
         {acquiring && (
-          <p className="text-sm text-muted-foreground">Acquiring edit lock...</p>
+          <p className="text-sm text-muted-foreground">{t('document.acquiringLock')}</p>
         )}
 
         {isLockedByOther && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {lockedByName || 'Someone is currently editing this document.'}
+            {t('document.lockedByOther', { name: lockedByName || 'Someone' })}
           </div>
         )}
 
@@ -249,22 +250,27 @@ export default function DocumentDetailPage() {
             {isEditable ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 text-success px-2.5 py-0.5 text-xs font-medium">
                 <Pencil className="h-3 w-3" />
-                Editing
+                {t('document.editing')}
               </span>
             ) : isApproved ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
                 <Lock className="h-3 w-3" />
-                Approved — Read Only
+                {t('document.approvedReadOnly')}
+              </span>
+            ) : doc.status === 'in_review' && !canEditDoc ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
+                <Lock className="h-3 w-3" />
+                {t('document.inReviewReadOnly')}
               </span>
             ) : isLockedByOther ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 py-0.5 text-xs font-medium">
                 <Lock className="h-3 w-3" />
-                Locked by {lockedByName}
+                {t('document.lockedBy', { name: lockedByName || '' })}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
                 <Eye className="h-3 w-3" />
-                View Only
+                {t('document.viewOnly')}
               </span>
             )}
             <div className="flex items-center gap-3">
@@ -274,7 +280,7 @@ export default function DocumentDetailPage() {
                     saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'
                   }`}
                 >
-                  {saveStatusLabel[saveStatus]}
+                  {saveStatus === 'saving' ? t('save.saving') : saveStatus === 'saved' ? t('save.saved') : saveStatus === 'error' ? t('save.failed') : ''}
                 </span>
               )}
               <ModeToggle mode={mode} onToggle={handleModeToggle} />
@@ -293,10 +299,10 @@ export default function DocumentDetailPage() {
                 documentId={documentId}
                 placeholder={
                   isApproved
-                    ? 'This document is approved and cannot be edited.'
+                    ? t('document.placeholderApproved')
                     : isLockedByOther
-                      ? 'This document is locked by another user.'
-                      : 'Start writing...'
+                      ? t('document.placeholderLocked')
+                      : t('document.placeholderStart')
                 }
               />
             ) : (
@@ -330,7 +336,7 @@ export default function DocumentDetailPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            Discussions
+            {t('discussions.title')}
             {hasOpenDiscussions && (
               <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive/20 px-1 text-[10px] font-bold text-destructive">
                 {openDiscussionCount}
@@ -350,7 +356,7 @@ export default function DocumentDetailPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            Members
+            {t('members.title')}
           </button>
           <button
             type="button"
@@ -365,7 +371,7 @@ export default function DocumentDetailPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            History
+            {t('history.title')}
           </button>
         </div>
 
@@ -381,30 +387,30 @@ export default function DocumentDetailPage() {
               }}
             >
               <DialogTrigger render={<Button size="sm" className="w-full" />}>
-                New Discussion
+                {t('discussions.newDiscussion')}
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>New Discussion</DialogTitle>
+                  <DialogTitle>{t('discussions.newDiscussion')}</DialogTitle>
                   <DialogDescription>
-                    Start a new discussion about this document.
+                    {t('discussions.newDiscussionDesc')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2">
                   <label htmlFor="new-disc-content" className="text-sm font-medium">
-                    Comment
+                    {t('discussions.commentLabel')}
                   </label>
                   <Textarea
                     id="new-disc-content"
                     value={newDiscContent}
                     onChange={(e) => setNewDiscContent(e.target.value)}
-                    placeholder="What would you like to discuss?"
+                    placeholder={t('discussions.commentPlaceholder')}
                     className="min-h-[100px]"
                   />
                 </div>
                 <DialogFooter>
                   <DialogClose render={<Button variant="outline" />}>
-                    Cancel
+                    {t('actions.cancel')}
                   </DialogClose>
                   <Button
                     onClick={() => createDiscussionMutation.mutate(newDiscContent.trim())}
@@ -412,7 +418,7 @@ export default function DocumentDetailPage() {
                       createDiscussionMutation.isPending || !newDiscContent.trim()
                     }
                   >
-                    {createDiscussionMutation.isPending ? 'Creating...' : 'Create'}
+                    {createDiscussionMutation.isPending ? t('discussions.creating') : t('discussions.create')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -436,7 +442,7 @@ export default function DocumentDetailPage() {
         )}
         {sidebarTab === 'history' && (
           <div role="tabpanel" id="panel-history" aria-labelledby="tab-history">
-            <Suspense fallback={<p className="text-sm text-muted-foreground">Loading history...</p>}>
+            <Suspense fallback={<p className="text-sm text-muted-foreground">{t('history.loading')}</p>}>
               <HistorySidebar documentId={documentId} />
             </Suspense>
           </div>

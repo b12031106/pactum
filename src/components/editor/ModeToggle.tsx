@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/context"
 
 type EditorMode = "richtext" | "markdown"
 
@@ -10,8 +11,10 @@ interface ModeToggleProps {
 }
 
 export function ModeToggle({ mode, onToggle }: ModeToggleProps) {
+  const { t } = useI18n()
+
   return (
-    <div className="flex gap-1" role="group" aria-label="Editor mode">
+    <div className="flex gap-1" role="group" aria-label={t('editor.modeLabel')}>
       <Button
         type="button"
         size="sm"
@@ -19,7 +22,7 @@ export function ModeToggle({ mode, onToggle }: ModeToggleProps) {
         onClick={() => onToggle("richtext")}
         aria-pressed={mode === "richtext"}
       >
-        Rich Text
+        {t('editor.richText')}
       </Button>
       <Button
         type="button"
@@ -28,7 +31,7 @@ export function ModeToggle({ mode, onToggle }: ModeToggleProps) {
         onClick={() => onToggle("markdown")}
         aria-pressed={mode === "markdown"}
       >
-        Markdown
+        {t('editor.markdown')}
       </Button>
     </div>
   )

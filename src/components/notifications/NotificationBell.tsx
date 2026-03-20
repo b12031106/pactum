@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { NotificationList } from './NotificationList';
+import { useI18n } from '@/i18n/context';
 
 export function NotificationBell() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -84,7 +86,7 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen(!open)}
         className="relative rounded-md p-2 hover:bg-accent transition-colors"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        aria-label={unreadCount > 0 ? t('notifications.titleWithCount', { count: unreadCount }) : t('notifications.title')}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -100,11 +102,11 @@ export function NotificationBell() {
         <div
           ref={panelRef}
           role="dialog"
-          aria-label="Notifications"
+          aria-label={t('notifications.title')}
           className="absolute right-0 top-full mt-2 w-80 rounded-lg border bg-popover shadow-lg z-50 animate-scale-in"
         >
           <div className="border-b px-4 py-2">
-            <h3 className="text-sm font-medium">Notifications</h3>
+            <h3 className="text-sm font-medium">{t('notifications.title')}</h3>
           </div>
           <NotificationList
             onNavigate={(docId) => {

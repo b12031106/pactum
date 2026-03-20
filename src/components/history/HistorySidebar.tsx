@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { CommitList } from './CommitList';
 import { DiffViewer } from './DiffViewer';
+import { useI18n } from '@/i18n/context';
 
 interface HistorySidebarProps {
   documentId: string;
 }
 
 export function HistorySidebar({ documentId }: HistorySidebarProps) {
+  const { t } = useI18n();
   const [selectedSha, setSelectedSha] = useState<string | null>(null);
 
   return (
@@ -20,7 +22,7 @@ export function HistorySidebar({ documentId }: HistorySidebarProps) {
             onClick={() => setSelectedSha(null)}
             className="text-sm text-primary hover:underline transition-colors"
           >
-            &larr; Back to commits
+            &larr; {t('history.backToCommits')}
           </button>
           <DiffViewer documentId={documentId} sha={selectedSha} />
         </div>

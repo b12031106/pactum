@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { UserHoverCard } from '@/components/UserHoverCard';
+import { useI18n } from '@/i18n/context';
 
 interface SignoffUser {
   id: string;
@@ -29,6 +30,7 @@ interface SignoffProgressProps {
 }
 
 export function SignoffProgress({ documentId }: SignoffProgressProps) {
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({
     queryKey: ['signoffs', documentId],
     queryFn: async () => {
@@ -39,7 +41,7 @@ export function SignoffProgress({ documentId }: SignoffProgressProps) {
   });
 
   if (isLoading) {
-    return <p className="text-xs text-muted-foreground">Loading signoff progress...</p>;
+    return <p className="text-xs text-muted-foreground">{t('signoff.loading')}</p>;
   }
 
   const signoffData = data?.data;
@@ -48,7 +50,7 @@ export function SignoffProgress({ documentId }: SignoffProgressProps) {
   return (
     <div className="rounded-md border p-4 space-y-3">
       <h3 className="text-sm font-semibold">
-        Signoff Progress: {signoffData.signed} / {signoffData.total} signed
+        {t('signoff.progress', { signed: signoffData.signed, total: signoffData.total })}
       </h3>
       <ul className="space-y-2">
         {signoffData.progress.map((entry) => (

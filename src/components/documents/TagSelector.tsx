@@ -3,6 +3,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/i18n/context';
 
 interface TagSelectorProps {
   tags: string[];
@@ -10,6 +11,7 @@ interface TagSelectorProps {
 }
 
 export function TagSelector({ tags, onChange }: TagSelectorProps) {
+  const { t } = useI18n();
   const [input, setInput] = useState('');
 
   const addTag = (value: string) => {
@@ -49,7 +51,7 @@ export function TagSelector({ tags, onChange }: TagSelectorProps) {
         ))}
       </div>
       <Input
-        placeholder="Type a tag and press Enter..."
+        placeholder={t('tags.placeholder')}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { DocumentCardSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -8,6 +8,7 @@ import { DocumentCard } from './DocumentCard';
 import { useDebouncedValue } from '@/hooks/useDebounce';
 import { SelectNative } from '@/components/ui/select-native';
 import { FileText } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 import type { DocumentStatus } from '@/types';
 
 interface DocumentItem {
@@ -19,17 +20,18 @@ interface DocumentItem {
   updatedAt: string;
 }
 
-const statusOptions: { value: string; label: string }[] = [
-  { value: '', label: 'All Status' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'approved', label: 'Approved' },
-];
-
 export function DocumentList() {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
+
+  const statusOptions = useMemo(() => [
+    { value: '', label: t('documents.allStatus') },
+    { value: 'draft', label: t('status.draft') },
+    { value: 'in_review', label: t('status.inReview') },
+    { value: 'approved', label: t('status.approved') },
+  ], [t]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['documents', debouncedSearch, statusFilter],
@@ -48,7 +50,7 @@ export function DocumentList() {
     <div className="space-y-4">
       <div className="flex gap-3">
         <Input
-          placeholder="Search documents..."
+          placeholder={t('documents.search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -72,16 +74,16 @@ export function DocumentList() {
           ))}
         </div>
       )}
-      {error && <p className="text-destructive">Failed to load documents.</p>}
+      {error && <p className="text-destructive">{t('documents.loadFailed')}</p>}
 
       {data && data.data.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="rounded-full bg-muted p-4 mb-4">
             <FileText className="size-8 text-muted-foreground" />
           </div>
-          <p className="text-lg font-medium">No documents yet</p>
+          <p className="text-lg font-medium">{t('documents.noDocuments')}</p>
           <p className="mt-1 text-sm text-muted-foreground max-w-xs">
-            Create your first document to start collaborating with your team.
+            {t('documents.noDocumentsDesc')}
           </p>
         </div>
       )}
