@@ -58,7 +58,7 @@ model Document {
 }
 
 model DocumentTag {
-  documentId String   @map("document_id")
+  documentId String @map("document_id")
   tag        String
 
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
