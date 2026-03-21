@@ -14,12 +14,14 @@ function ExpandedDiscussion({
   documentId,
   canResolve,
   currentUserId,
+  members,
 }: {
   discussionId: string;
   fallback: Discussion;
   documentId: string;
   canResolve: boolean;
   currentUserId?: string;
+  members?: MemberUser[];
 }) {
   const { t } = useI18n();
   const { data } = useQuery({
@@ -40,21 +42,31 @@ function ExpandedDiscussion({
         documentId={documentId}
         canResolve={canResolve}
         currentUserId={currentUserId}
+        members={members}
       />
     </div>
   );
+}
+
+interface MemberUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
 }
 
 interface DiscussionSidebarProps {
   documentId: string;
   canResolve: boolean;
   currentUserId?: string;
+  members?: MemberUser[];
 }
 
 export function DiscussionSidebar({
   documentId,
   canResolve,
   currentUserId,
+  members,
 }: DiscussionSidebarProps) {
   const { t } = useI18n();
   const [filter, setFilter] = useState<FilterStatus>('all');
@@ -173,6 +185,7 @@ export function DiscussionSidebar({
                     documentId={documentId}
                     canResolve={canResolve}
                     currentUserId={currentUserId}
+                    members={members}
                   />
                 )}
               </div>

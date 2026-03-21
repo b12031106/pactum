@@ -9,6 +9,7 @@ import { CommentForm } from './CommentForm';
 import { DiscussionSignoff } from './DiscussionSignoff';
 import { UserHoverCard } from '@/components/UserHoverCard';
 import { useI18n } from '@/i18n/context';
+import type { ReactNode } from 'react';
 import type { DiscussionStatus, DiscussionCta, AnchorType } from '@/types';
 
 interface User {
@@ -54,10 +55,48 @@ interface DiscussionThreadProps {
   documentId: string;
   canResolve: boolean;
   currentUserId?: string;
+  members?: User[];
 }
 
 function formatTime(dateStr: string): string {
   return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+}
+
+function renderMentions(text: string, usersByName: Map<string, User>): ReactNode[] {
+  if (usersByName.size === 0) return [text];
+
+  // Build a regex that matches any known @Name, longest names first to avoid partial matches
+  const names = Array.from(usersByName.keys()).sort((a, b) => b.length - a.length);
+  const escaped = names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`@(${escaped.join('|')})`, 'g');
+
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const user = usersByName.get(match[1]);
+    if (!user) continue;
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <UserHoverCard key={match.index} user={user} className="font-medium text-primary">
+        @{user.name}
+      </UserHoverCard>,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
+
+function CommentContent({ content, users }: { content: string; users: Map<string, User> }) {
+  return <p className="mt-1 whitespace-pre-wrap">{renderMentions(content, users)}</p>;
 }
 
 function AnchorLabel({ type, data }: { type: AnchorType; data: Record<string, unknown> }) {
@@ -91,10 +130,21 @@ export function DiscussionThread({
   documentId,
   canResolve,
   currentUserId,
+  members,
 }: DiscussionThreadProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const isOpen = discussion.status === 'open';
+
+  // Build name→user map for mention rendering
+  const usersByName = new Map<string, User>();
+  if (members) {
+    for (const m of members) usersByName.set(m.name, m);
+  }
+  usersByName.set(discussion.creator.name, discussion.creator);
+  for (const comment of discussion.comments) {
+    usersByName.set(comment.author.name, comment.author);
+  }
 
   const resolveMutation = useMutation({
     mutationFn: async (cta: 'no_change' | 'need_change') => {
@@ -137,7 +187,7 @@ export function DiscussionThread({
               <span className="font-medium text-foreground"><UserHoverCard user={comment.author}>{comment.author.name}</UserHoverCard></span>
               <span>{formatTime(comment.createdAt)}</span>
             </div>
-            <p className="mt-1 whitespace-pre-wrap">{comment.content}</p>
+            <CommentContent content={comment.content} users={usersByName} />
           </div>
         ))}
       </div>

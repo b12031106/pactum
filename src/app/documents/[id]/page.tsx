@@ -457,6 +457,7 @@ export default function DocumentDetailPage() {
               documentId={documentId}
               canResolve={canResolve}
               currentUserId={session?.user?.id}
+              members={[doc.creator, ...doc.members.map((m) => m.user)]}
             />
           </div>
         )}
