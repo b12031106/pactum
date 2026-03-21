@@ -56,7 +56,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
 
     const cursorPos = e.target.selectionStart;
     const textBeforeCursor = value.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+    const atMatch = textBeforeCursor.match(/@([^\s]*)$/);
 
     if (atMatch) {
       setMentionQuery(atMatch[1]);
@@ -70,7 +70,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
   const handleMentionSelect = useCallback((user: { id: string; name: string }) => {
     const cursorPos = textareaRef.current?.selectionStart ?? 0;
     const text = content;
-    const beforeAt = text.slice(0, cursorPos).replace(/@\w*$/, '');
+    const beforeAt = text.slice(0, cursorPos).replace(/@[^\s]*$/, '');
     const afterCursor = text.slice(cursorPos);
     setContent(`${beforeAt}@${user.name} ${afterCursor}`);
     setMentions((prev) => [...new Set([...prev, user.id])]);

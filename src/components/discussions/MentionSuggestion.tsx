@@ -29,7 +29,7 @@ export function MentionSuggestion({ documentId, query, visible, onSelect, positi
       if (!res.ok) throw new Error('Failed');
       return res.json() as Promise<{ data: MentionUser[] }>;
     },
-    enabled: visible && query.length > 0,
+    enabled: visible,
   });
 
   const users = useMemo(() => data?.data ?? [], [data?.data]);
