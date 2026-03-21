@@ -155,6 +155,7 @@ export default function DocumentDetailPage() {
   }
 
   // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('discussions');
   const [newDiscOpen, setNewDiscOpen] = useState(false);
   const [newDiscContent, setNewDiscContent] = useState('');
@@ -236,7 +237,7 @@ export default function DocumentDetailPage() {
       // Scroll the selection into view
       const view = editorRef.current.view;
       const coords = view.coordsAtPos(from);
-      window.scrollTo({ top: coords.top - 200, behavior: 'smooth' });
+      window.scrollTo({ top: window.scrollY + coords.top - 120, behavior: 'smooth' });
     }
   }, []);
 
@@ -373,8 +374,19 @@ export default function DocumentDetailPage() {
         </div>
       </div>
 
+      {/* Sidebar toggle */}
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 items-center justify-center w-6 h-12 rounded-l-md bg-muted border border-r-0 border-border hover:bg-accent transition-colors"
+        aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+      >
+        <svg className={`h-4 w-4 text-muted-foreground transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
       {/* Right: Sidebar */}
-      <div className="w-full lg:w-[350px] lg:shrink-0 lg:border-l lg:pl-4 border-t lg:border-t-0 pt-4 lg:pt-0 space-y-4">
+      {sidebarOpen && (
+      <div className="w-full lg:w-[350px] lg:shrink-0 lg:border-l lg:pl-4 border-t lg:border-t-0 pt-4 lg:pt-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
         {/* Tab buttons */}
         <div role="tablist" className="flex gap-1">
           <button
@@ -516,6 +528,7 @@ export default function DocumentDetailPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

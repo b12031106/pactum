@@ -14,7 +14,7 @@ import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
 import { Markdown } from "tiptap-markdown"
 import { common, createLowlight } from "lowlight"
 import { ImageUpload } from "./extensions/image-upload"
-import { DiscussionHighlight, type DiscussionAnchor } from "./extensions/discussion-highlight"
+import { DiscussionHighlight, highlightKey, type DiscussionAnchor } from "./extensions/discussion-highlight"
 import { EditorToolbar } from "./EditorToolbar"
 
 const lowlight = createLowlight(common)
@@ -90,12 +90,14 @@ export function TiptapEditor({
   }, [editor, content])
 
   useEffect(() => {
-    if (editor && editor.extensionManager.extensions.find(e => e.name === 'discussionHighlight')) {
+    if (editor) {
+      // Update anchors for click handling
       const ext = editor.extensionManager.extensions.find(e => e.name === 'discussionHighlight')
-      if (ext) {
-        ext.options.anchors = discussionAnchors
-        editor.view.dispatch(editor.view.state.tr)
-      }
+      if (ext) ext.options.anchors = discussionAnchors
+      // Dispatch metadata to trigger decoration rebuild
+      editor.view.dispatch(
+        editor.view.state.tr.setMeta(highlightKey, { anchors: discussionAnchors })
+      )
     }
   }, [editor, discussionAnchors])
 

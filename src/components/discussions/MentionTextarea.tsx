@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Textarea } from '@/components/ui/textarea';
 import { MentionSuggestion } from './MentionSuggestion';
 import { useI18n } from '@/i18n/context';
@@ -51,7 +52,10 @@ export const MentionTextarea = forwardRef<MentionTextareaRef, MentionTextareaPro
       if (atMatch) {
         setMentionQuery(atMatch[1]);
         updateMentionVisible(true);
-        setMentionPosition({ top: (textareaRef.current?.offsetHeight ?? 0) + 4, left: 0 });
+        const rect = textareaRef.current?.getBoundingClientRect();
+        if (rect) {
+          setMentionPosition({ top: rect.bottom + 4, left: rect.left });
+        }
       } else {
         updateMentionVisible(false);
       }
@@ -77,13 +81,16 @@ export const MentionTextarea = forwardRef<MentionTextareaRef, MentionTextareaPro
           placeholder={placeholder ?? t('comments.placeholder')}
           className={className}
         />
-        <MentionSuggestion
-          documentId={documentId}
-          query={mentionQuery}
-          visible={mentionVisible}
-          onSelect={handleMentionSelect}
-          position={mentionPosition}
-        />
+        {typeof document !== 'undefined' && createPortal(
+          <MentionSuggestion
+            documentId={documentId}
+            query={mentionQuery}
+            visible={mentionVisible}
+            onSelect={handleMentionSelect}
+            position={mentionPosition}
+          />,
+          document.body,
+        )}
       </div>
     );
   },

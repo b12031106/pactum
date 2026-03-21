@@ -9,7 +9,30 @@ export interface DiscussionAnchor {
   status: string
 }
 
-const highlightKey = new PluginKey('discussionHighlight')
+export const highlightKey = new PluginKey('discussionHighlight')
+
+function buildDecorations(doc: { content: { size: number } }, anchors: DiscussionAnchor[]): DecorationSet {
+  if (!anchors.length) return DecorationSet.empty
+
+  const decorations: Decoration[] = []
+  const docSize = doc.content.size
+
+  for (const anchor of anchors) {
+    if (anchor.from < 0 || anchor.to > docSize || anchor.from >= anchor.to) continue
+
+    const isOpen = anchor.status === 'open'
+    decorations.push(
+      Decoration.inline(anchor.from, anchor.to, {
+        class: isOpen
+          ? 'discussion-highlight discussion-highlight--open'
+          : 'discussion-highlight discussion-highlight--resolved',
+        'data-discussion-id': anchor.discussionId,
+      })
+    )
+  }
+
+  return DecorationSet.create(doc as Parameters<typeof DecorationSet.create>[0], decorations)
+}
 
 export const DiscussionHighlight = Extension.create({
   name: 'discussionHighlight',
@@ -27,30 +50,27 @@ export const DiscussionHighlight = Extension.create({
     return [
       new Plugin({
         key: highlightKey,
+        state: {
+          init(_, state) {
+            const { anchors } = extension.options as { anchors: DiscussionAnchor[] }
+            return buildDecorations(state.doc, anchors)
+          },
+          apply(tr, oldDecorations, _oldState, newState) {
+            // Check for explicit anchor update via metadata
+            const meta = tr.getMeta(highlightKey)
+            if (meta?.anchors) {
+              return buildDecorations(newState.doc, meta.anchors)
+            }
+            // Remap on doc changes
+            if (tr.docChanged) {
+              return oldDecorations.map(tr.mapping, newState.doc)
+            }
+            return oldDecorations
+          },
+        },
         props: {
           decorations(state) {
-            const { anchors } = extension.options as { anchors: DiscussionAnchor[] }
-            if (!anchors.length) return DecorationSet.empty
-
-            const decorations: Decoration[] = []
-            const docSize = state.doc.content.size
-
-            for (const anchor of anchors) {
-              // Validate positions are within document bounds
-              if (anchor.from < 0 || anchor.to > docSize || anchor.from >= anchor.to) continue
-
-              const isOpen = anchor.status === 'open'
-              decorations.push(
-                Decoration.inline(anchor.from, anchor.to, {
-                  class: isOpen
-                    ? 'discussion-highlight discussion-highlight--open'
-                    : 'discussion-highlight discussion-highlight--resolved',
-                  'data-discussion-id': anchor.discussionId,
-                })
-              )
-            }
-
-            return DecorationSet.create(state.doc, decorations)
+            return highlightKey.getState(state) ?? DecorationSet.empty
           },
 
           handleClick(view, pos) {

@@ -63,7 +63,7 @@ export function MentionSuggestion({ documentId, query, visible, onSelect, positi
   return (
     <div
       ref={listRef}
-      className="absolute z-50 w-60 rounded-md border bg-popover shadow-md"
+      className="fixed z-[9999] w-60 rounded-md border bg-popover shadow-md"
       style={{ top: position.top, left: position.left }}
     >
       {users.map((user, i) => (
