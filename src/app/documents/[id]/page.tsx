@@ -25,6 +25,7 @@ import { SignoffProgress } from '@/components/documents/SignoffProgress';
 import { ModeToggle } from '@/components/editor/ModeToggle';
 import { Textarea } from '@/components/ui/textarea';
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
+import { SelectionBubble } from '@/components/editor/SelectionBubble';
 import { DocumentDetailSkeleton } from '@/components/ui/LoadingSkeleton';
 import { Pencil, Lock, Eye } from 'lucide-react';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -145,6 +146,7 @@ export default function DocumentDetailPage() {
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('discussions');
   const [newDiscOpen, setNewDiscOpen] = useState(false);
   const [newDiscContent, setNewDiscContent] = useState('');
+  const [selectionAnchor, setSelectionAnchor] = useState<{ from: number; to: number; text: string } | null>(null);
 
   const isEditable = canEditDoc && lockedByMe;
   const isLockedByOther = isLocked && !lockedByMe;
@@ -170,13 +172,13 @@ export default function DocumentDetailPage() {
 
   // New discussion mutation
   const createDiscussionMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, anchor }: { content: string; anchor?: { from: number; to: number; text: string } }) => {
       const res = await fetch(`/api/documents/${documentId}/discussions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          anchorType: 'line',
-          anchorData: { lineNumber: 0 },
+          anchorType: anchor ? 'range' : 'line',
+          anchorData: anchor ? { from: anchor.from, to: anchor.to, text: anchor.text } : { lineNumber: 0 },
           content,
         }),
       });
@@ -190,12 +192,19 @@ export default function DocumentDetailPage() {
       toast.success('Discussion created');
       setNewDiscOpen(false);
       setNewDiscContent('');
+      setSelectionAnchor(null);
       queryClient.invalidateQueries({ queryKey: ['discussions', documentId] });
     },
     onError: (err: Error) => {
       toast.error(err.message);
     },
   });
+
+  const handleSelectionDiscussion = useCallback((anchor: { from: number; to: number; text: string }) => {
+    setSelectionAnchor(anchor);
+    setNewDiscOpen(true);
+    setSidebarTab('discussions');
+  }, []);
 
   if (isLoading) {
     return <DocumentDetailSkeleton />;
@@ -289,22 +298,31 @@ export default function DocumentDetailPage() {
 
           <Suspense fallback={<div className="min-h-[400px] rounded-lg border border-border animate-pulse bg-muted/30" />}>
             {mode === 'richtext' ? (
-              <TiptapEditor
-                content={tiptapContent}
-                onUpdate={(json) => save(json)}
-                onEditorReady={(editor) => {
-                  editorRef.current = editor;
-                }}
-                editable={isEditable}
-                documentId={documentId}
-                placeholder={
-                  isApproved
-                    ? t('document.placeholderApproved')
-                    : isLockedByOther
-                      ? t('document.placeholderLocked')
-                      : t('document.placeholderStart')
-                }
-              />
+              <>
+                <TiptapEditor
+                  content={tiptapContent}
+                  onUpdate={(json) => save(json)}
+                  onEditorReady={(editor) => {
+                    editorRef.current = editor;
+                  }}
+                  editable={isEditable}
+                  documentId={documentId}
+                  placeholder={
+                    isApproved
+                      ? t('document.placeholderApproved')
+                      : isLockedByOther
+                        ? t('document.placeholderLocked')
+                        : t('document.placeholderStart')
+                  }
+                />
+                {doc.status === 'in_review' && canCreateDisc && (
+                  <SelectionBubble
+                    editor={editorRef.current}
+                    onCreateDiscussion={handleSelectionDiscussion}
+                    enabled={mode === 'richtext'}
+                  />
+                )}
+              </>
             ) : (
               <MarkdownEditor
                 value={markdownContent}
@@ -383,7 +401,10 @@ export default function DocumentDetailPage() {
               open={newDiscOpen}
               onOpenChange={(open) => {
                 setNewDiscOpen(open);
-                if (!open) setNewDiscContent('');
+                if (!open) {
+                  setNewDiscContent('');
+                  setSelectionAnchor(null);
+                }
               }}
             >
               <DialogTrigger render={<Button size="sm" className="w-full" />}>
@@ -396,6 +417,11 @@ export default function DocumentDetailPage() {
                     {t('discussions.newDiscussionDesc')}
                   </DialogDescription>
                 </DialogHeader>
+                {selectionAnchor && (
+                  <div className="rounded-md border-l-2 border-primary/30 bg-muted/50 px-3 py-2 text-sm italic text-muted-foreground">
+                    &ldquo;{selectionAnchor.text.length > 120 ? selectionAnchor.text.slice(0, 117) + '...' : selectionAnchor.text}&rdquo;
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label htmlFor="new-disc-content" className="text-sm font-medium">
                     {t('discussions.commentLabel')}
@@ -413,7 +439,7 @@ export default function DocumentDetailPage() {
                     {t('actions.cancel')}
                   </DialogClose>
                   <Button
-                    onClick={() => createDiscussionMutation.mutate(newDiscContent.trim())}
+                    onClick={() => createDiscussionMutation.mutate({ content: newDiscContent.trim(), anchor: selectionAnchor ?? undefined })}
                     disabled={
                       createDiscussionMutation.isPending || !newDiscContent.trim()
                     }

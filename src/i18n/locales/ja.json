@@ -143,5 +143,7 @@
   "save.failed": "保存に失敗",
 
   "anchor.line": "{line} 行目",
-  "anchor.range": "{from}〜{to} 行"
+  "anchor.range": "{from}〜{to} 行",
+
+  "discussions.discussSelection": "選択範囲について議論"
 }

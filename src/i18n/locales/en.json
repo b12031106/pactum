@@ -143,5 +143,7 @@
   "save.failed": "Save failed",
 
   "anchor.line": "Line {line}",
-  "anchor.range": "Range {from}–{to}"
+  "anchor.range": "Range {from}–{to}",
+
+  "discussions.discussSelection": "Discuss selection"
 }

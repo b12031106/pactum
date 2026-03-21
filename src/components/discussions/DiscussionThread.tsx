@@ -66,6 +66,15 @@ function AnchorLabel({ type, data }: { type: AnchorType; data: Record<string, un
     return <span className="text-xs text-muted-foreground">Line {line ?? '?'}</span>;
   }
   if (type === 'range') {
+    const text = (data as { text?: string }).text;
+    if (text) {
+      const displayText = text.length > 60 ? text.slice(0, 57) + '...' : text;
+      return (
+        <span className="block text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2 py-0.5 line-clamp-2">
+          &ldquo;{displayText}&rdquo;
+        </span>
+      );
+    }
     const from = (data as { from?: number }).from;
     const to = (data as { to?: number }).to;
     return (

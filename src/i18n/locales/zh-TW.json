@@ -143,5 +143,7 @@
   "save.failed": "儲存失敗",
 
   "anchor.line": "第 {line} 行",
-  "anchor.range": "第 {from}–{to} 行"
+  "anchor.range": "第 {from}–{to} 行",
+
+  "discussions.discussSelection": "討論選取內容"
 }
