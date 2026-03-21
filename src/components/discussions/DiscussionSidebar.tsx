@@ -8,6 +8,43 @@ import { useI18n } from '@/i18n/context';
 
 type FilterStatus = 'all' | 'open' | 'resolved';
 
+function ExpandedDiscussion({
+  discussionId,
+  fallback,
+  documentId,
+  canResolve,
+  currentUserId,
+}: {
+  discussionId: string;
+  fallback: Discussion;
+  documentId: string;
+  canResolve: boolean;
+  currentUserId?: string;
+}) {
+  const { t } = useI18n();
+  const { data } = useQuery({
+    queryKey: ['discussion', discussionId],
+    queryFn: async () => {
+      const res = await fetch(`/api/discussions/${discussionId}`);
+      if (!res.ok) throw new Error('Failed to fetch discussion');
+      return res.json() as Promise<{ data: Discussion }>;
+    },
+  });
+
+  const discussion = data?.data ?? fallback;
+
+  return (
+    <div className="border-t border-border p-3 animate-fade-in">
+      <DiscussionThread
+        discussion={discussion}
+        documentId={documentId}
+        canResolve={canResolve}
+        currentUserId={currentUserId}
+      />
+    </div>
+  );
+}
+
 interface DiscussionSidebarProps {
   documentId: string;
   canResolve: boolean;
@@ -130,14 +167,13 @@ export function DiscussionSidebar({
 
                 {/* Expanded content */}
                 {isExpanded && (
-                  <div className="border-t border-border p-3 animate-fade-in">
-                    <DiscussionThread
-                      discussion={discussion}
-                      documentId={documentId}
-                      canResolve={canResolve}
-                      currentUserId={currentUserId}
-                    />
-                  </div>
+                  <ExpandedDiscussion
+                    discussionId={discussion.id}
+                    fallback={discussion}
+                    documentId={documentId}
+                    canResolve={canResolve}
+                    currentUserId={currentUserId}
+                  />
                 )}
               </div>
             );

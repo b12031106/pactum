@@ -104,6 +104,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
       </div>
       <div className="flex justify-end">
         <Button
+          type="submit"
           size="sm"
           disabled={mutation.isPending || !content.trim()}
         >
