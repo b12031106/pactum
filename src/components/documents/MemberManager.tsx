@@ -41,9 +41,10 @@ interface GroupedMember {
 interface MemberManagerProps {
   documentId: string;
   isCreator: boolean;
+  creator?: MemberUser;
 }
 
-export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
+export function MemberManager({ documentId, isCreator, creator }: MemberManagerProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
@@ -129,15 +130,17 @@ export function MemberManager({ documentId, isCreator }: MemberManagerProps) {
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">{t('members.loading')}</p>
-      ) : grouped.length === 0 ? (
-        <div className="flex flex-col items-center py-6 text-center">
-          <div className="rounded-full bg-muted p-3 mb-2">
-            <Users className="size-5 text-muted-foreground" />
-          </div>
-          <p className="text-xs text-muted-foreground">{t('members.noMembers')}</p>
-        </div>
       ) : (
         <ul className="space-y-2">
+          {creator && (
+            <li className="flex items-center justify-between gap-2 text-sm">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{creator.name}</div>
+                <div className="truncate text-xs text-muted-foreground">{creator.email}</div>
+              </div>
+              <Badge variant="secondary">creator</Badge>
+            </li>
+          )}
           {grouped.map((g) => (
             <li key={g.user.id} className="flex items-center justify-between gap-2 text-sm">
               <div className="min-w-0 flex-1">

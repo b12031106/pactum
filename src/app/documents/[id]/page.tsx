@@ -534,7 +534,7 @@ export default function DocumentDetailPage() {
         )}
         {sidebarTab === 'members' && (
           <div role="tabpanel" id="panel-members" aria-labelledby="tab-members">
-            <MemberManager documentId={documentId} isCreator={isCreator} />
+            <MemberManager documentId={documentId} isCreator={isCreator} creator={doc.creator} />
           </div>
         )}
         {sidebarTab === 'history' && (
