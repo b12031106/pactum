@@ -93,6 +93,14 @@
   }
 }
 
+button:not(:disabled),
+[role="button"]:not(:disabled),
+[role="tab"],
+[role="menuitem"],
+summary {
+  cursor: pointer;
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
