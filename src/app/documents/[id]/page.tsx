@@ -65,6 +65,8 @@ interface DiscussionListItem {
   id: string;
   status: string;
   cta: string | null;
+  anchorType: string;
+  anchorData: Record<string, unknown>;
 }
 
 type EditorMode = 'richtext' | 'markdown';
@@ -123,6 +125,16 @@ export default function DocumentDetailPage() {
   );
   const canEditDoc = !isApproved && (doc?.status !== 'in_review' || hasNeedChange);
 
+  // Build anchor highlights for editor
+  const discussionAnchors = (discussionsData?.data ?? [])
+    .filter((d) => d.anchorType === 'range' && d.anchorData?.from != null && d.anchorData?.to != null)
+    .map((d) => ({
+      discussionId: d.id,
+      from: d.anchorData.from as number,
+      to: d.anchorData.to as number,
+      status: d.status,
+    }));
+
   const { isLocked, lockedByMe, lockedByName, acquiring } = useEditLock({
     documentId,
     enabled: !!doc && canEditDoc,
@@ -149,6 +161,7 @@ export default function DocumentDetailPage() {
   const [newDiscMentionVisible, setNewDiscMentionVisible] = useState(false);
   const newDiscMentionRef = useRef<MentionTextareaRef>(null);
   const [selectionAnchor, setSelectionAnchor] = useState<{ from: number; to: number; text: string } | null>(null);
+  const [activeDiscussionId, setActiveDiscussionId] = useState<string | null>(null);
 
   const isEditable = canEditDoc && lockedByMe;
   const isLockedByOther = isLocked && !lockedByMe;
@@ -209,6 +222,22 @@ export default function DocumentDetailPage() {
     setSelectionAnchor(anchor);
     setNewDiscOpen(true);
     setSidebarTab('discussions');
+  }, []);
+
+  const handleHighlightClick = useCallback((discussionId: string) => {
+    setSidebarTab('discussions');
+    setActiveDiscussionId(discussionId);
+  }, []);
+
+  const handleLocateAnchor = useCallback((from: number) => {
+    if (editorRef.current) {
+      editorRef.current.commands.focus();
+      editorRef.current.commands.setTextSelection(from);
+      // Scroll the selection into view
+      const view = editorRef.current.view;
+      const coords = view.coordsAtPos(from);
+      window.scrollTo({ top: coords.top - 200, behavior: 'smooth' });
+    }
   }, []);
 
   if (isLoading) {
@@ -312,6 +341,8 @@ export default function DocumentDetailPage() {
                   }}
                   editable={isEditable}
                   documentId={documentId}
+                  discussionAnchors={discussionAnchors}
+                  onDiscussionClick={handleHighlightClick}
                   placeholder={
                     isApproved
                       ? t('document.placeholderApproved')
@@ -466,6 +497,9 @@ export default function DocumentDetailPage() {
               canResolve={canResolve}
               currentUserId={session?.user?.id}
               members={[doc.creator, ...doc.members.map((m) => m.user)]}
+              activeDiscussionId={activeDiscussionId}
+              onActiveDiscussionHandled={() => setActiveDiscussionId(null)}
+              onLocateAnchor={handleLocateAnchor}
             />
           </div>
         )}

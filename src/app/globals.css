@@ -128,6 +128,40 @@ summary {
   animation: scale-in 0.15s ease-out;
 }
 
+.discussion-highlight {
+  border-radius: 2px;
+  padding-bottom: 1px;
+  transition: background-color 0.15s;
+}
+
+.discussion-highlight--open {
+  background-color: oklch(0.9 0.1 85 / 0.5);
+  border-bottom: 1.5px solid oklch(0.75 0.15 85);
+}
+
+.discussion-highlight--open:hover {
+  background-color: oklch(0.85 0.12 85 / 0.7);
+}
+
+.discussion-highlight--resolved {
+  background-color: oklch(0.95 0.01 265 / 0.3);
+  border-bottom: 1px dashed oklch(0.8 0.02 265);
+}
+
+.dark .discussion-highlight--open {
+  background-color: oklch(0.4 0.1 85 / 0.3);
+  border-bottom-color: oklch(0.6 0.12 85);
+}
+
+.dark .discussion-highlight--open:hover {
+  background-color: oklch(0.45 0.12 85 / 0.4);
+}
+
+.dark .discussion-highlight--resolved {
+  background-color: oklch(0.3 0.01 265 / 0.2);
+  border-bottom-color: oklch(0.5 0.02 265);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -14,6 +14,7 @@ import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
 import { Markdown } from "tiptap-markdown"
 import { common, createLowlight } from "lowlight"
 import { ImageUpload } from "./extensions/image-upload"
+import { DiscussionHighlight, type DiscussionAnchor } from "./extensions/discussion-highlight"
 import { EditorToolbar } from "./EditorToolbar"
 
 const lowlight = createLowlight(common)
@@ -25,6 +26,8 @@ interface TiptapEditorProps {
   editable?: boolean
   placeholder?: string
   documentId?: string
+  discussionAnchors?: DiscussionAnchor[]
+  onDiscussionClick?: (discussionId: string) => void
 }
 
 export function TiptapEditor({
@@ -34,6 +37,8 @@ export function TiptapEditor({
   editable = true,
   placeholder = "Start writing...",
   documentId,
+  discussionAnchors = [],
+  onDiscussionClick,
 }: TiptapEditorProps) {
   const contentSetRef = useRef(false)
 
@@ -56,6 +61,10 @@ export function TiptapEditor({
       Placeholder.configure({ placeholder }),
       Markdown,
       ...(documentId ? [ImageUpload.configure({ documentId })] : []),
+      DiscussionHighlight.configure({
+        anchors: discussionAnchors,
+        onClickAnchor: onDiscussionClick ?? (() => {}),
+      }),
     ],
     editable,
     onCreate({ editor: createdEditor }) {
@@ -79,6 +88,16 @@ export function TiptapEditor({
       editor.commands.setContent(content as Parameters<typeof editor.commands.setContent>[0])
     }
   }, [editor, content])
+
+  useEffect(() => {
+    if (editor && editor.extensionManager.extensions.find(e => e.name === 'discussionHighlight')) {
+      const ext = editor.extensionManager.extensions.find(e => e.name === 'discussionHighlight')
+      if (ext) {
+        ext.options.anchors = discussionAnchors
+        editor.view.dispatch(editor.view.state.tr)
+      }
+    }
+  }, [editor, discussionAnchors])
 
   return (
     <div className={`rounded-lg border ${editable ? 'border-border' : 'border-border border-dashed bg-muted/30'}`}>

@@ -56,6 +56,7 @@ interface DiscussionThreadProps {
   canResolve: boolean;
   currentUserId?: string;
   members?: User[];
+  onLocateAnchor?: (from: number) => void;
 }
 
 function formatTime(dateStr: string): string {
@@ -99,7 +100,7 @@ function CommentContent({ content, users }: { content: string; users: Map<string
   return <p className="mt-1 whitespace-pre-wrap">{renderMentions(content, users)}</p>;
 }
 
-function AnchorLabel({ type, data }: { type: AnchorType; data: Record<string, unknown> }) {
+function AnchorLabel({ type, data, onLocate }: { type: AnchorType; data: Record<string, unknown>; onLocate?: () => void }) {
   if (type === 'line') {
     const line = (data as { lineNumber?: number }).lineNumber;
     return <span className="text-xs text-muted-foreground">Line {line ?? '?'}</span>;
@@ -109,8 +110,22 @@ function AnchorLabel({ type, data }: { type: AnchorType; data: Record<string, un
     if (text) {
       const displayText = text.length > 60 ? text.slice(0, 57) + '...' : text;
       return (
-        <span className="block text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2 py-0.5 line-clamp-2">
-          &ldquo;{displayText}&rdquo;
+        <span className="flex items-center gap-1.5">
+          <span className="flex-1 text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2 py-0.5 line-clamp-2">
+            &ldquo;{displayText}&rdquo;
+          </span>
+          {onLocate && (
+            <button
+              type="button"
+              onClick={onLocate}
+              className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Locate in editor"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          )}
         </span>
       );
     }
@@ -131,6 +146,7 @@ export function DiscussionThread({
   canResolve,
   currentUserId,
   members,
+  onLocateAnchor,
 }: DiscussionThreadProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -173,7 +189,15 @@ export function DiscussionThread({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <AnchorLabel type={discussion.anchorType} data={discussion.anchorData} />
+        <AnchorLabel
+          type={discussion.anchorType}
+          data={discussion.anchorData}
+          onLocate={
+            discussion.anchorType === 'range' && discussion.anchorData?.from != null && onLocateAnchor
+              ? () => onLocateAnchor(discussion.anchorData.from as number)
+              : undefined
+          }
+        />
         <Badge variant={isOpen ? 'outline' : 'secondary'}>
           {discussion.status}
         </Badge>

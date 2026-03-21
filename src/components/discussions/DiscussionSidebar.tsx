@@ -15,6 +15,7 @@ function ExpandedDiscussion({
   canResolve,
   currentUserId,
   members,
+  onLocateAnchor,
 }: {
   discussionId: string;
   fallback: Discussion;
@@ -22,6 +23,7 @@ function ExpandedDiscussion({
   canResolve: boolean;
   currentUserId?: string;
   members?: MemberUser[];
+  onLocateAnchor?: (from: number) => void;
 }) {
   const { t } = useI18n();
   const { data } = useQuery({
@@ -43,6 +45,7 @@ function ExpandedDiscussion({
         canResolve={canResolve}
         currentUserId={currentUserId}
         members={members}
+        onLocateAnchor={onLocateAnchor}
       />
     </div>
   );
@@ -60,6 +63,9 @@ interface DiscussionSidebarProps {
   canResolve: boolean;
   currentUserId?: string;
   members?: MemberUser[];
+  activeDiscussionId?: string | null;
+  onActiveDiscussionHandled?: () => void;
+  onLocateAnchor?: (from: number) => void;
 }
 
 export function DiscussionSidebar({
@@ -67,10 +73,16 @@ export function DiscussionSidebar({
   canResolve,
   currentUserId,
   members,
+  activeDiscussionId,
+  onActiveDiscussionHandled,
+  onLocateAnchor,
 }: DiscussionSidebarProps) {
   const { t } = useI18n();
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // When parent sets activeDiscussionId, use it as the expanded id
+  const effectiveExpandedId = activeDiscussionId ?? expandedId;
 
   const { data, isLoading } = useQuery({
     queryKey: ['discussions', documentId, filter],
@@ -144,7 +156,7 @@ export function DiscussionSidebar({
       ) : (
         <div className="space-y-2">
           {discussions.map((discussion) => {
-            const isExpanded = expandedId === discussion.id;
+            const isExpanded = effectiveExpandedId === discussion.id;
             const firstComment = discussion.comments[0];
             return (
               <div
@@ -154,9 +166,10 @@ export function DiscussionSidebar({
                 {/* Collapsed header — always visible */}
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpandedId(isExpanded ? null : discussion.id)
-                  }
+                  onClick={() => {
+                    onActiveDiscussionHandled?.();
+                    setExpandedId(isExpanded ? null : discussion.id);
+                  }}
                   aria-expanded={isExpanded}
                   className="flex w-full items-center gap-2 p-2 text-left text-sm hover:bg-muted/50"
                 >
@@ -186,6 +199,7 @@ export function DiscussionSidebar({
                     canResolve={canResolve}
                     currentUserId={currentUserId}
                     members={members}
+                    onLocateAnchor={onLocateAnchor}
                   />
                 )}
               </div>
