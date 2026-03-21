@@ -315,7 +315,7 @@ export default function DocumentDetailPage() {
                         : t('document.placeholderStart')
                   }
                 />
-                {doc.status === 'in_review' && canCreateDisc && (
+                {canCreateDisc && (
                   <SelectionBubble
                     editor={editorRef.current}
                     onCreateDiscussion={handleSelectionDiscussion}
@@ -395,7 +395,6 @@ export default function DocumentDetailPage() {
 
         {/* New Discussion button */}
         {sidebarTab === 'discussions' &&
-          doc.status === 'in_review' &&
           canCreateDisc && (
             <Dialog
               open={newDiscOpen}
