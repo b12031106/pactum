@@ -145,5 +145,6 @@
   "anchor.line": "Line {line}",
   "anchor.range": "Range {from}–{to}",
 
-  "discussions.discussSelection": "Discuss selection"
+  "discussions.discussSelection": "Discuss selection",
+  "discussions.hideSidebar": "Hide sidebar"
 }

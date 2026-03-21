@@ -27,7 +27,7 @@ import { MentionTextarea, type MentionTextareaRef } from '@/components/discussio
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
 import { SelectionBubble } from '@/components/editor/SelectionBubble';
 import { DocumentDetailSkeleton } from '@/components/ui/LoadingSkeleton';
-import { Pencil, Lock, Eye } from 'lucide-react';
+import { Pencil, Lock, Eye, PanelRightClose, MessageSquare } from 'lucide-react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditLock } from '@/hooks/useEditLock';
 import { canCreateDiscussion as checkCanCreateDiscussion, canResolveDiscussion } from '@/lib/permissions';
@@ -177,9 +177,11 @@ export default function DocumentDetailPage() {
         setMarkdownContent(md);
         setMode('markdown');
       } else {
-        if (editorRef.current) {
-          editorRef.current.commands.setContent(markdownContent);
-        }
+        // When switching back to richtext, update tiptapContent with the current
+        // markdown so the re-mounted TiptapEditor picks up the latest content.
+        // The old editorRef is stale (unmounted), so we can't call setContent on it.
+        setTiptapContent(markdownContent);
+        setContentInitialized(true);
         setMode('richtext');
       }
     },
@@ -374,19 +376,34 @@ export default function DocumentDetailPage() {
         </div>
       </div>
 
-      {/* Sidebar toggle */}
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 items-center justify-center w-6 h-12 rounded-l-md bg-muted border border-r-0 border-border hover:bg-accent transition-colors"
-        aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-      >
-        <svg className={`h-4 w-4 text-muted-foreground transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
+      {/* Sidebar toggle (collapsed state) */}
+      {!sidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="hidden lg:flex fixed right-0 top-1/3 z-40 items-center gap-1.5 rounded-l-lg bg-primary text-primary-foreground px-2 py-3 text-xs font-medium shadow-lg hover:bg-primary/90 transition-colors"
+          style={{ writingMode: 'vertical-rl' }}
+          aria-label={t('discussions.title')}
+        >
+          <MessageSquare className="h-4 w-4 rotate-90" />
+          {t('discussions.title')}
+        </button>
+      )}
 
       {/* Right: Sidebar */}
       {sidebarOpen && (
       <div className="w-full lg:w-[350px] lg:shrink-0 lg:border-l lg:pl-4 border-t lg:border-t-0 pt-4 lg:pt-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+        {/* Sidebar collapse button */}
+        <div className="hidden lg:flex justify-end -mt-1 -mb-2">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label={t('discussions.hideSidebar')}
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </button>
+        </div>
         {/* Tab buttons */}
         <div role="tablist" className="flex gap-1">
           <button

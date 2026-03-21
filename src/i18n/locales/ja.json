@@ -145,5 +145,6 @@
   "anchor.line": "{line} 行目",
   "anchor.range": "{from}〜{to} 行",
 
-  "discussions.discussSelection": "選択範囲について議論"
+  "discussions.discussSelection": "選択範囲について議論",
+  "discussions.hideSidebar": "サイドバーを非表示"
 }

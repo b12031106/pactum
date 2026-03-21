@@ -145,5 +145,6 @@
   "anchor.line": "第 {line} 行",
   "anchor.range": "第 {from}–{to} 行",
 
-  "discussions.discussSelection": "讨论选中内容"
+  "discussions.discussSelection": "讨论选中内容",
+  "discussions.hideSidebar": "隐藏侧边栏"
 }

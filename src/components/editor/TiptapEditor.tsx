@@ -82,8 +82,12 @@ export function TiptapEditor({
   }, [editor, editable])
 
   useEffect(() => {
-    const isValidContent = content && typeof content === 'object' && 'type' in (content as Record<string, unknown>)
-    if (editor && isValidContent && !contentSetRef.current) {
+    if (!editor || contentSetRef.current) return
+    // Accept both JSON content (object with 'type') and markdown strings
+    if (typeof content === 'string' && content.length > 0) {
+      contentSetRef.current = true
+      editor.commands.setContent(content)
+    } else if (content && typeof content === 'object' && 'type' in (content as Record<string, unknown>)) {
       contentSetRef.current = true
       editor.commands.setContent(content as Parameters<typeof editor.commands.setContent>[0])
     }

@@ -41,21 +41,25 @@ export function MentionSuggestion({ documentId, query, visible, onSelect, positi
   }
 
   useEffect(() => {
+    if (!visible || users.length === 0) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (!visible || users.length === 0) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedIndex((i) => Math.min(i + 1, users.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedIndex((i) => Math.max(i - 1, 0));
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
+        e.stopImmediatePropagation();
         onSelect(users[selectedIndex]);
       }
     }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Use capture phase to intercept before Dialog's keyboard handlers
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [visible, users, selectedIndex, onSelect]);
 
   if (!visible || users.length === 0) return null;
@@ -65,6 +69,8 @@ export function MentionSuggestion({ documentId, query, visible, onSelect, positi
       ref={listRef}
       className="fixed z-[9999] w-60 rounded-md border bg-popover shadow-md"
       style={{ top: position.top, left: position.left }}
+      // Prevent clicks on the suggestion list from being treated as "outside" by Dialog
+      onPointerDown={(e) => e.stopPropagation()}
     >
       {users.map((user, i) => (
         <button
