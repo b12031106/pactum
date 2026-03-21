@@ -23,7 +23,7 @@ import { MemberManager } from '@/components/documents/MemberManager';
 import { DocumentActions } from '@/components/documents/DocumentActions';
 import { SignoffProgress } from '@/components/documents/SignoffProgress';
 import { ModeToggle } from '@/components/editor/ModeToggle';
-import { Textarea } from '@/components/ui/textarea';
+import { MentionTextarea, type MentionTextareaRef } from '@/components/discussions/MentionTextarea';
 import { DiscussionSidebar } from '@/components/discussions/DiscussionSidebar';
 import { SelectionBubble } from '@/components/editor/SelectionBubble';
 import { DocumentDetailSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -146,6 +146,8 @@ export default function DocumentDetailPage() {
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('discussions');
   const [newDiscOpen, setNewDiscOpen] = useState(false);
   const [newDiscContent, setNewDiscContent] = useState('');
+  const [newDiscMentionVisible, setNewDiscMentionVisible] = useState(false);
+  const newDiscMentionRef = useRef<MentionTextareaRef>(null);
   const [selectionAnchor, setSelectionAnchor] = useState<{ from: number; to: number; text: string } | null>(null);
 
   const isEditable = canEditDoc && lockedByMe;
@@ -173,6 +175,7 @@ export default function DocumentDetailPage() {
   // New discussion mutation
   const createDiscussionMutation = useMutation({
     mutationFn: async ({ content, anchor }: { content: string; anchor?: { from: number; to: number; text: string } }) => {
+      const mentions = newDiscMentionRef.current?.getMentions() ?? [];
       const res = await fetch(`/api/documents/${documentId}/discussions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -180,6 +183,7 @@ export default function DocumentDetailPage() {
           anchorType: anchor ? 'range' : 'line',
           anchorData: anchor ? { from: anchor.from, to: anchor.to, text: anchor.text } : { lineNumber: 0 },
           content,
+          mentions,
         }),
       });
       if (!res.ok) {
@@ -193,6 +197,7 @@ export default function DocumentDetailPage() {
       setNewDiscOpen(false);
       setNewDiscContent('');
       setSelectionAnchor(null);
+      newDiscMentionRef.current?.reset();
       queryClient.invalidateQueries({ queryKey: ['discussions', documentId] });
     },
     onError: (err: Error) => {
@@ -425,12 +430,15 @@ export default function DocumentDetailPage() {
                   <label htmlFor="new-disc-content" className="text-sm font-medium">
                     {t('discussions.commentLabel')}
                   </label>
-                  <Textarea
+                  <MentionTextarea
+                    ref={newDiscMentionRef}
                     id="new-disc-content"
+                    documentId={documentId}
                     value={newDiscContent}
-                    onChange={(e) => setNewDiscContent(e.target.value)}
+                    onChange={setNewDiscContent}
                     placeholder={t('discussions.commentPlaceholder')}
                     className="min-h-[100px]"
+                    onMentionVisibleChange={setNewDiscMentionVisible}
                   />
                 </div>
                 <DialogFooter>

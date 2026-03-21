@@ -4,8 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { MentionSuggestion } from './MentionSuggestion';
+import { MentionTextarea, type MentionTextareaRef } from './MentionTextarea';
 import { useI18n } from '@/i18n/context';
 
 interface CommentFormProps {
@@ -18,14 +17,12 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const [content, setContent] = useState('');
-  const [mentions, setMentions] = useState<string[]>([]);
-  const [mentionQuery, setMentionQuery] = useState('');
   const [mentionVisible, setMentionVisible] = useState(false);
-  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mentionRef = useRef<MentionTextareaRef>(null);
 
   const mutation = useMutation({
     mutationFn: async (text: string) => {
+      const mentions = mentionRef.current?.getMentions() ?? [];
       const res = await fetch(`/api/discussions/${discussionId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,7 +36,7 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
     },
     onSuccess: () => {
       setContent('');
-      setMentions([]);
+      mentionRef.current?.reset();
       queryClient.invalidateQueries({ queryKey: ['discussion', discussionId] });
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
       toast.success(t('comments.added'));
@@ -50,58 +47,22 @@ export function CommentForm({ discussionId, documentId, onSuccess }: CommentForm
     },
   });
 
-  const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setContent(value);
-
-    const cursorPos = e.target.selectionStart;
-    const textBeforeCursor = value.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@([^\s]*)$/);
-
-    if (atMatch) {
-      setMentionQuery(atMatch[1]);
-      setMentionVisible(true);
-      setMentionPosition({ top: (textareaRef.current?.offsetHeight ?? 0) + 4, left: 0 });
-    } else {
-      setMentionVisible(false);
-    }
-  }, []);
-
-  const handleMentionSelect = useCallback((user: { id: string; name: string }) => {
-    const cursorPos = textareaRef.current?.selectionStart ?? 0;
-    const text = content;
-    const beforeAt = text.slice(0, cursorPos).replace(/@[^\s]*$/, '');
-    const afterCursor = text.slice(cursorPos);
-    setContent(`${beforeAt}@${user.name} ${afterCursor}`);
-    setMentions((prev) => [...new Set([...prev, user.id])]);
-    setMentionVisible(false);
-    textareaRef.current?.focus();
-  }, [content]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (mentionVisible) return; // Don't submit while selecting mention
+    if (mentionVisible) return;
     if (!content.trim()) return;
     mutation.mutate(content.trim());
-  };
+  }, [mentionVisible, content, mutation]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <div className="relative">
-        <Textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleInput}
-          placeholder={t('comments.placeholder')}
-        />
-        <MentionSuggestion
-          documentId={documentId}
-          query={mentionQuery}
-          visible={mentionVisible}
-          onSelect={handleMentionSelect}
-          position={mentionPosition}
-        />
-      </div>
+      <MentionTextarea
+        ref={mentionRef}
+        documentId={documentId}
+        value={content}
+        onChange={setContent}
+        onMentionVisibleChange={setMentionVisible}
+      />
       <div className="flex justify-end">
         <Button
           type="submit"
