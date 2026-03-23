@@ -110,8 +110,8 @@ export function TiptapEditor({
   }, [editor, discussionAnchors])
 
   return (
-    <div className={`rounded-lg border overflow-hidden ${editable ? 'border-border' : 'border-dashed bg-muted/30'}`}>
-      <div className={`sticky top-0 z-10 bg-background ${!editable ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`rounded-lg border ${editable ? 'border-border' : 'border-dashed bg-muted/30'}`}>
+      <div className={`sticky top-0 z-10 bg-background rounded-t-lg ${!editable ? 'opacity-50 pointer-events-none' : ''}`}>
         <EditorToolbar editor={editor} />
       </div>
       <EditorContent

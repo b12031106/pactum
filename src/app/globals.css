@@ -132,6 +132,7 @@ summary {
   border-radius: 2px;
   padding-bottom: 1px;
   transition: background-color 0.15s;
+  cursor: pointer;
 }
 
 .discussion-highlight--open {

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import type { Editor } from '@tiptap/react';
+import { TextSelection } from '@tiptap/pm/state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -228,19 +229,27 @@ export default function DocumentDetailPage() {
   }, []);
 
   const handleHighlightClick = useCallback((discussionId: string) => {
+    setSidebarOpen(true);
     setSidebarTab('discussions');
     setActiveDiscussionId(discussionId);
   }, []);
 
   const handleLocateAnchor = useCallback((from: number) => {
-    if (editorRef.current) {
-      editorRef.current.commands.focus();
-      editorRef.current.commands.setTextSelection(from);
-      // Scroll the selection into view
-      const view = editorRef.current.view;
-      const coords = view.coordsAtPos(from);
-      window.scrollTo({ top: window.scrollY + coords.top - 120, behavior: 'smooth' });
-    }
+    if (!editorRef.current) return;
+    const view = editorRef.current.view;
+
+    // Compute scroll target BEFORE any scroll changes (coords.top is viewport-relative)
+    const coords = view.coordsAtPos(from);
+    const targetScrollY = Math.max(0, window.scrollY + coords.top - 100);
+
+    // Set selection WITHOUT triggering ProseMirror's scrollIntoView
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, from)));
+
+    // Focus editor without browser scroll-to-focus
+    view.dom.focus({ preventScroll: true });
+
+    // Scroll window to show the target text near the top
+    window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
   }, []);
 
   if (isLoading) {

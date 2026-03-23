@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { DiscussionThread, type Discussion } from './DiscussionThread';
@@ -84,6 +84,15 @@ export function DiscussionSidebar({
   // When parent sets activeDiscussionId, use it as the expanded id
   const effectiveExpandedId = activeDiscussionId ?? expandedId;
 
+  // Scroll to the active discussion when set from parent (e.g., clicking a highlight)
+  useEffect(() => {
+    if (!activeDiscussionId) return;
+    requestAnimationFrame(() => {
+      document.getElementById(`discussion-${activeDiscussionId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }, [activeDiscussionId]);
+
   const { data, isLoading } = useQuery({
     queryKey: ['discussions', documentId, filter],
     queryFn: async () => {
@@ -161,6 +170,7 @@ export function DiscussionSidebar({
             return (
               <div
                 key={discussion.id}
+                id={`discussion-${discussion.id}`}
                 className="rounded-md border border-border"
               >
                 {/* Collapsed header — always visible */}
