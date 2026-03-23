@@ -162,6 +162,15 @@ summary {
   border-bottom-color: oklch(0.5 0.02 265);
 }
 
+/* TipTap Placeholder — prose class 未覆蓋的部分 */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

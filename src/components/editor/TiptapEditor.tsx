@@ -13,6 +13,8 @@ import { Placeholder } from "@tiptap/extension-placeholder"
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
 import { Markdown } from "tiptap-markdown"
 import { common, createLowlight } from "lowlight"
+import { Underline } from "@tiptap/extension-underline"
+import { TextAlign } from "@tiptap/extension-text-align"
 import { ImageUpload } from "./extensions/image-upload"
 import { DiscussionHighlight, highlightKey, type DiscussionAnchor } from "./extensions/discussion-highlight"
 import { EditorToolbar } from "./EditorToolbar"
@@ -59,6 +61,8 @@ export function TiptapEditor({
       Image,
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder }),
+      Underline,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
       Markdown,
       ...(documentId ? [ImageUpload.configure({ documentId })] : []),
       DiscussionHighlight.configure({
@@ -106,13 +110,13 @@ export function TiptapEditor({
   }, [editor, discussionAnchors])
 
   return (
-    <div className={`rounded-lg border ${editable ? 'border-border' : 'border-border border-dashed bg-muted/30'}`}>
-      <div className={editable ? '' : 'opacity-50 pointer-events-none'}>
+    <div className={`rounded-lg border overflow-hidden ${editable ? 'border-border' : 'border-dashed bg-muted/30'}`}>
+      <div className={`sticky top-0 z-10 bg-background ${!editable ? 'opacity-50 pointer-events-none' : ''}`}>
         <EditorToolbar editor={editor} />
       </div>
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none min-h-[400px] p-4 focus:outline-none"
+        className="prose prose-neutral dark:prose-invert prose-sm max-w-none min-h-[400px] px-8 py-6 focus:outline-none"
       />
     </div>
   )
